@@ -1,0 +1,18 @@
+services:
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: litellm-proxy
+    restart: always
+    ports:
+      - "${PORT:-4000}:4000"
+    volumes:
+      - ./litellm_config.yaml:/app/config.yaml
+    environment:
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY}
+      - VLLM_API_BASE=${VLLM_API_BASE:-http://host.docker.internal:8000/v1}
+      - VLLM_API_KEY=${VLLM_API_KEY:-EMPTY}
+      - LLAMACPP_API_BASE=${LLAMACPP_API_BASE:-http://host.docker.internal:8080/v1}
+      - LLAMACPP_API_KEY=${LLAMACPP_API_KEY:-EMPTY}
+    command: [ "--config", "/app/config.yaml", "--port", "4000", "--detailed_debug" ]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

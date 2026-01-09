@@ -1,0 +1,18 @@
+model_list:
+  # vLLM Backend (Video-Capable)
+  - model_name: qwen2-vl
+    litellm_params:
+      model: hosted_vllm/Qwen/Qwen2-VL-7B-Instruct
+      api_base: ${VLLM_API_BASE} # e.g., http://vllm-service:8000/v1
+      api_key: ${VLLM_API_KEY}   # vLLM usually needs "EMPTY" or a specific key
+
+  # llama.cpp Backend (CPU/Edge Optimized)
+  - model_name: llama3-8b
+    litellm_params:
+      model: openai/llama3-8b-gguf
+      api_base: ${LLAMACPP_API_BASE} # e.g., http://llama-cpp-service:8080/v1
+      api_key: ${LLAMACPP_API_KEY}
+
+general_settings:
+  master_key: ${LITELLM_MASTER_KEY}
+  detailed_debug: true
