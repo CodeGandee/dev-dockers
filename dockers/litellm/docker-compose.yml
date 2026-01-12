@@ -4,7 +4,7 @@ services:
     container_name: litellm-proxy
     restart: always
     ports:
-      - "${PORT:-4000}:4000"
+      - "${HOST_PORT_PROXY:-4000}:${CONTAINER_PORT_PROXY:-4000}"
     volumes:
       - ./litellm_config.yaml:/app/config.yaml
     environment:
@@ -13,6 +13,6 @@ services:
       - VLLM_API_KEY=${VLLM_API_KEY:-EMPTY}
       - LLAMACPP_API_BASE=${LLAMACPP_API_BASE:-http://host.docker.internal:8080/v1}
       - LLAMACPP_API_KEY=${LLAMACPP_API_KEY:-EMPTY}
-    command: [ "--config", "/app/config.yaml", "--port", "4000", "--detailed_debug" ]
+    command: [ "--config", "/app/config.yaml", "--port", "${CONTAINER_PORT_PROXY:-4000}", "--detailed_debug" ]
     extra_hosts:
       - "host.docker.internal:host-gateway"
