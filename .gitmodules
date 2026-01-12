@@ -1,4 +1,8 @@
 [submodule "magic-context"]
 	path = magic-context
-	url = git@github.com:igamenovoer/magic-context.git
+	url = https://github.com/igamenovoer/magic-context.git
+	branch = main
+[submodule "extern/tracked/PeiDocker"]
+	path = extern/tracked/PeiDocker
+	url = https://github.com/igamenovoer/PeiDocker.git
 	branch = main
