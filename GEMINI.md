@@ -83,3 +83,10 @@ All Docker environments in `dockers/` must adhere to the strict contracts define
 ### Context Directory
 
 Use the `context/` directory for all documentation, plans, and AI context storage. Follow the naming conventions in `context/README.md` (e.g., `howto-`, `task-`, `prompt-`).
+
+## Testing and Temporary Files
+
+When running tests or generating temporary scripts/outputs, always use the `tmp/` directory. Create a subdirectory for your specific task to avoid clutter.
+
+*   **Location**: `tmp/<task-name>/`
+*   **Git Behavior**: The `tmp/` directory is ignored by git.
