@@ -1,0 +1,176 @@
+# all paths are relative to /installation directory
+
+stage_1:
+  # input/output image settings
+  image:
+    base: docker.1ms.run/nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.04
+    output: infer-dev:stage-1
+
+  # ssh settings
+  ssh:
+    enable: true
+
+    # port in container, if given, this port WILL be set inside container as SSH port
+    port: 22
+
+    # mapped port on host machine, if given, this port will be mapped to the container SSH port
+    host_port: ${HOST_PORT_SSH:-2222}
+
+    # ssh users, the key is user name, value is user info
+    users:
+      me:
+        password: '123456'
+
+        # SSH Key Options (choose one method per key type):
+
+        # Public key options (mutually exclusive):
+        pubkey_file: null # Path to public key file (relative to installation directory)
+        pubkey_text: 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL9Dy9lfXRXzRAb1t+U9midU0vXSAhNphlHuBPkb2PQ6 huangzhe@16-16'
+
+        # Private key options (mutually exclusive):
+        privkey_file: null # Path to private key file (relative to installation directory)
+        privkey_text: null # Direct private key content (conflicts with privkey_file)
+
+        # Explicitly specifing UID for the user, must be unique in the system
+        uid: 1001
+
+      root: # you can configure root user here
+        password: root
+        uid: 0 # root uid, always 0 regardless of what you put here
+
+  # proxy settings
+  # inside the container, the proxy will accessed as http://{address}:{port}
+  # note that whether the proxy is used or not depends on the applications
+  proxy:
+    address: host.docker.internal # default value, this will map to the host machine
+    port: ${HOST_PORT_PROXY:-7890} # if address==host.docker.internal, this will be the proxy port on host machine
+    enable_globally: false # enable proxy for all shell commands during build and run?
+    remove_after_build: false # remove global proxy after build?
+    use_https: false # use https proxy?
+
+
+  # apt settings
+  apt:
+    # replace the default apt source with a custom one, use empty string to disable this
+    # repo_source: 'stage-1/system/apt/ubuntu-22.04-tsinghua-x64.list'
+    # special values that refer to well known apt sources:
+    # 'tuna' : 'http://mirrors.tuna.tsinghua.edu.cn/ubuntu/'
+    # 'aliyun' : 'http://mirrors.aliyun.com/ubuntu/'
+    # '163' : 'http://mirrors.163.com/ubuntu/'
+    # 'ustc' : 'http://mirrors.ustc.edu.cn/ubuntu/'
+    # 'cn' : 'http://cn.archive.ubuntu.com/ubuntu/
+    repo_source: 'aliyun'
+    keep_repo_after_build: true # keep the apt source file after build?
+    use_proxy: false # use proxy for apt?
+    keep_proxy_after_build: false # keep proxy settings after build?
+
+  # additional environment variables
+  # see https://docs.docker.com/compose/environment-variables/set-environment-variables/
+  environment:
+  - 'CUDA_HOME=/usr/local/cuda'
+
+  # additional port mapping
+  # see https://docs.docker.com/compose/networking/
+  ports: []
+
+  # device settings
+  device:
+    type: gpu # can be cpu or gpu
+
+  # mount external volumes to container
+  mount: {}
+
+  # custom scripts
+  custom:
+    # scripts run during build
+    on_build:
+      - 'stage-1/system/uv/install-uv.sh --user me'
+
+    # scripts run on first run
+    on_first_run: []
+
+    # scripts run on every run
+    on_every_run: []
+
+    # scripts run on user login
+    on_user_login: []
+
+    # custom entry point script - replaces shell startup in system entrypoint
+    on_entry: []
+
+stage_2:
+
+  # input/output image settings
+  image:
+    base: null # if not specified, use the output image of stage-1
+    output: infer-dev:stage-2
+
+  # additional environment variables
+  # see https://docs.docker.com/compose/environment-variables/set-environment-variables/
+  environment: # use list intead of dict
+  - 'CUDA_HOME=/usr/local/cuda'
+
+  # port mapping, will be appended to the stage-1 port mapping
+  # see https://docs.docker.com/compose/networking/
+  ports: []
+
+  # device settings, will override the stage-1 device settings
+  device:
+    type: gpu # can be cpu or gpu
+
+
+  # proxy settings
+  # inside the container, the proxy will accessed as http://{address}:{port}
+  # note that whether the proxy is used or not depends on the applications
+  proxy:
+    address: null # this means to use the proxy settings of stage-1
+    port: null
+    enable_globally: null
+    remove_after_build: null
+    use_https: null
+
+  # storage configurations
+  storage:
+    app:
+      type: host # auto-volume, manual-volume, host, image
+      host_path: .container/app # host directory to be mounted, in effect when type=host
+      volume_name: null # volume name, in effect when type=manual-volume
+    data:
+      type: host
+      host_path: .container/data
+      volume_name: null
+    workspace:
+      type: host
+      host_path: .container/workspace
+      volume_name: null
+
+  # mount external volumes to container
+  # the volumes can be given any names, mounted anywhere
+  # the volume type cannot be 'image', or otherwise it will be ignored
+  mount:
+    home_me:
+      type: host # auto-volume, manual-volume, host
+      dst_path: /home/me
+      host_path: .container/home-me
+      volume_name: null
+
+  # custom scripts in stage-2, run after stage-1 custom scripts
+  # Scripts can include parameters: 'script.sh --param1=value1 --param2="value with spaces"'
+  custom:
+    # scripts run during build
+    on_build:
+      - 'stage-2/system/pixi/install-pixi.bash --user me --conda-repo tuna --pypi-repo tuna'
+      - 'stage-2/system/claude-code/install-claude-code.sh --user me'
+      - 'stage-2/system/codex-cli/install-codex-cli.sh --user me'
+
+    # scripts run on first start
+    on_first_run: []
+
+    # scripts run on every start
+    on_every_run: []
+
+    # scripts run on user login
+    on_user_login: []
+
+    # custom entry point script - replaces shell startup in system entrypoint
+    on_entry: []
