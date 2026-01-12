@@ -1,0 +1,5 @@
+.container/
+.env
+docker-compose.yml
+installation/stage-1/generated/
+installation/stage-2/generated/
