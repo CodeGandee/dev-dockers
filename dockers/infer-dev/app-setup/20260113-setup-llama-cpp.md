@@ -2,20 +2,22 @@
 
 ## Environment
 - Container: `infer-dev:stage-2`
-- User: `me`
+- User: `me` (with `root` access for installation)
 - Workspace: `/hard/volume/workspace/llama-cpp` (mapped from host `dockers/infer-dev/.container/workspace/llama-cpp`)
 
 ## Steps
 
 ### 1. Install Build Tools
-Using `pixi` to install `cmake` and `ninja`.
+Install system-level dependencies for building C++ projects and CUDA support.
 
 ```bash
-export PATH=$HOME/.pixi/bin:$PATH
-pixi global install cmake ninja
+# As root:
+# apt update && apt install -y cmake ninja-build libcurl4-openssl-dev
 ```
 
 ### 2. Configure Build (CUDA)
+Configure with CUDA enabled and use Ninja for faster builds.
+
 ```bash
 cd /hard/volume/workspace/llama-cpp
 cmake -B build -DGGML_CUDA=ON -G Ninja
