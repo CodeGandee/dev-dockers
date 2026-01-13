@@ -77,8 +77,12 @@ stage_1:
   device:
     type: gpu # can be cpu or gpu
 
-  # mount external volumes to container
-  mount: {}
+  mount:
+    llm_models:
+      type: host
+      dst_path: /hard/volume/data/llm-models
+      host_path: /data1/huangzhe/llm-models
+      volume_name: null
 
   # custom scripts
   custom:

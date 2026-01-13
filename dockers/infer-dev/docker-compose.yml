@@ -91,4 +91,5 @@ services:
         ROOT_PASSWORD: ''
     ports:
     - '2222:22'
-    volumes: []
+    volumes:
+    - /data1/huangzhe/llm-models:/hard/volume/data/llm-models
