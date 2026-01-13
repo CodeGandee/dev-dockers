@@ -160,6 +160,7 @@ stage_2:
     # scripts run during build
     on_build:
       - 'stage-2/system/pixi/install-pixi.bash --user me --conda-repo tuna --pypi-repo tuna'
+      - 'stage-2/system/nodejs/install-nvm-nodejs.sh --user me'
       - 'stage-2/system/claude-code/install-claude-code.sh --user me'
       - 'stage-2/system/codex-cli/install-codex-cli.sh --user me'
 
