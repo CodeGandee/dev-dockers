@@ -147,12 +147,7 @@ stage_2:
   # mount external volumes to container
   # the volumes can be given any names, mounted anywhere
   # the volume type cannot be 'image', or otherwise it will be ignored
-  mount:
-    home_me:
-      type: host # auto-volume, manual-volume, host
-      dst_path: /home/me
-      host_path: .container/home-me
-      volume_name: null
+  mount: {}
 
   # custom scripts in stage-2, run after stage-1 custom scripts
   # Scripts can include parameters: 'script.sh --param1=value1 --param2="value with spaces"'

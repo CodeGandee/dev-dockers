@@ -43,7 +43,6 @@ services:
     - .container/app:/hard/volume/app
     - .container/data:/hard/volume/data
     - .container/workspace:/hard/volume/workspace
-    - .container/home-me:/home/me
   stage-1:
     profiles:
     - build-helper
