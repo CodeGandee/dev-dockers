@@ -175,4 +175,4 @@ stage_2:
     on_user_login: []
 
     # custom entry point script - replaces shell startup in system entrypoint
-    on_entry: 'custom/simple-entry.sh /bin/bash'
+    on_entry: []
