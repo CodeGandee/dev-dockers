@@ -161,6 +161,7 @@ stage_2:
     on_build:
       - 'stage-2/system/pixi/install-pixi.bash --user me --conda-repo tuna --pypi-repo tuna'
       - 'stage-2/system/nodejs/install-nvm-nodejs.sh --user me'
+      - 'stage-2/system/bun/install-bun.sh --user me --npm-repo https://registry.npmmirror.com'
       - 'stage-2/system/claude-code/install-claude-code.sh --user me'
       - 'stage-2/system/codex-cli/install-codex-cli.sh --user me'
 
@@ -174,4 +175,4 @@ stage_2:
     on_user_login: []
 
     # custom entry point script - replaces shell startup in system entrypoint
-    on_entry: []
+    on_entry: 'custom/simple-entry.sh /bin/bash'

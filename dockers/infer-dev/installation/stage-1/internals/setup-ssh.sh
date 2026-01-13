@@ -41,7 +41,6 @@ echo "X11UseLocalhost no" >> /etc/ssh/sshd_config
 # create a user group named users
 # Ensure ssh_users group exists (idempotent)
 if ! getent group ssh_users >/dev/null 2>&1; then
-  # Use -r to create a system group, avoiding conflicts with user GIDs (like 1001)
   groupadd -r ssh_users
 fi
 
