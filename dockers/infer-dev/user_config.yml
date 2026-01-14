@@ -174,4 +174,5 @@ stage_2:
     on_user_login: []
 
     # custom entry point script - replaces shell startup in system entrypoint
-    on_entry: []
+    on_entry:
+      - 'check-and-run-llama-cpp.sh'

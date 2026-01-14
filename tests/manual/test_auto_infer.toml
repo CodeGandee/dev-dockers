@@ -1,0 +1,42 @@
+[master]
+enable = true
+# We use the system llama-server (assumed in PATH for this test, or adjust if needed)
+# In infer-dev container, it should be in PATH or we use the specific path if known.
+# For now, default "llama-server" is fine.
+
+[instance.control]
+log_dir = "/tmp"
+background = true
+gpu_ids = "0" # Default to GPU 0
+
+[instance.server]
+host = "0.0.0.0"
+n_gpu_layers = 99
+flash_attn = true
+
+# Instance 1: Qwen 3 0.6B (Linked in models/)
+# Note: The 'model' path must be accessible INSIDE the container.
+# We will mount the workspace root to /app in the container for this test?
+# Or we rely on the paths we set up in models/.
+# Assuming we run this IN the container where we mounted the workspace.
+# If running via 'check-and-run-llama-cpp.sh' inside container:
+# We need to ensure 'models/' is available.
+# In infer-dev, we mount .container/app, .container/data, etc.
+# We should probably mount the 'models' directory to the container to test this easily.
+# For this test file, let's assume we map 'models' to '/models' inside container.
+
+[instance.qwen3]
+    [instance.qwen3.server]
+    # Path inside container (mounted volume)
+    model = "/hard/volume/data/llm-models/qwen3-0.6b/qwen/Qwen3-0___6B"
+    port = 8080
+    alias = "qwen3"
+    ctx_size = 4096
+
+[instance.glm4]
+    [instance.glm4.server]
+    # Path inside container (mounted volume)
+    model = "/hard/volume/data/llm-models/GLM-4.7-GGUF/Q2_K"
+    port = 8081
+    alias = "glm4"
+    ctx_size = 8192

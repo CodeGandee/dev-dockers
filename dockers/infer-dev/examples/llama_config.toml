@@ -1,0 +1,61 @@
+# Sample Llama.cpp Configuration
+# Point to this file using: ENV AUTO_INFER_LLAMA_CPP_CONFIG=/path/to/this/file.toml
+
+# 0. Master Configuration
+# Global control for the auto-launcher
+[master]
+# Master switch to enable/disable the entire launch process
+enable = true
+# Path to the llama-server executable inside the container
+llama_cpp_path = "llama-server"
+
+# 1. Global Defaults
+# These settings apply to all instances unless overridden.
+
+[instance.control]
+# Where to store logs by default
+log_dir = "/tmp"
+# Run processes in background by default (recommended for entrypoint scripts)
+background = true
+# Default GPU visibility (optional, e.g. "0,1", "all", "none")
+# gpu_ids = "0"
+
+[instance.server]
+# Common llama-server arguments
+host = "0.0.0.0"
+n_gpu_layers = 99
+flash_attn = true
+# Enable metrics for all instances
+metrics = true
+
+
+# 2. Model Instances
+# Each section here defines a separate server process.
+
+# Example 1: Llama 3 8B
+# This will launch a server on port 8080 serving the specified model.
+[instance.llama-3-8b]
+    [instance.llama-3-8b.server]
+    model = "/path/to/your/model.gguf"
+    port = 8080
+    alias = "llama3"
+    ctx_size = 8192
+    
+    # Example of adding extra raw arguments
+    # extra_args = ["--verbose"]
+
+# Example 2: Gemma 2B (Commented out)
+# [instance.gemma-2b]
+#     [instance.gemma-2b.control]
+#     # You can disable specific instances easily
+#     enabled = false
+#     log_file = "/tmp/custom-gemma.log"
+#     # Assign specific GPUs ("0", "0,1", "all", "none")
+#     gpu_ids = "0"
+#
+#     [instance.gemma-2b.server]
+#     model = "/path/to/another/model.gguf"
+#     port = 8081
+#     alias = "gemma"
+#     # Override global default (e.g. run on CPU)
+#     n_gpu_layers = 0
