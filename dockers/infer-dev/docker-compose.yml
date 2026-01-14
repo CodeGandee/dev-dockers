@@ -37,13 +37,14 @@ services:
         REMOVE_GLOBAL_PROXY_AFTER_BUILD: false
     ports:
     - '2222:22'
+    - 11980:8080
     environment:
       CUDA_HOME: /usr/local/cuda
     volumes:
     - .container/app:/hard/volume/app
     - .container/data:/hard/volume/data
     - .container/workspace:/hard/volume/workspace
-    - /data1/huangzhe/llm-models:/hard/volume/data/llm-models
+    - /data1/huangzhe/llm-models/GLM-4.7-GGUF/Q2_K:/llm-models/GLM-4.7-GGUF/Q2_K
   stage-1:
     profiles:
     - build-helper
@@ -92,5 +93,4 @@ services:
         ROOT_PASSWORD: ''
     ports:
     - '2222:22'
-    volumes:
-    - /data1/huangzhe/llm-models:/hard/volume/data/llm-models
+    volumes: []

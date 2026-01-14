@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/llama-cpp-config-toml.schema.json",
+  "title": "Llama.cpp TOML Configuration (AUTO_INFER_LLAMA_CPP_CONFIG)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["instance"],
+  "properties": {
+    "master": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enable": { "type": "boolean", "default": true },
+        "llama_cpp_path": {
+          "type": "string",
+          "description": "Path to llama-server inside the container (or 'llama-server' if in PATH).",
+          "minLength": 1
+        }
+      }
+    },
+    "instance": {
+      "type": "object",
+      "description": "Instance tables. Reserved keys: 'control' and 'server'. All other keys are treated as model instance names.",
+      "properties": {
+        "control": { "$ref": "#/$defs/instanceControlDefaults" },
+        "server": { "$ref": "#/$defs/serverArgs" }
+      },
+      "patternProperties": {
+        "^[A-Za-z0-9][A-Za-z0-9._-]*$": { "$ref": "#/$defs/modelInstance" }
+      }
+    }
+  },
+  "$defs": {
+    "gpuIds": {
+      "type": "string",
+      "description": "GPU visibility selection: 'all', 'none', or comma-separated GPU indices.",
+      "pattern": "^(all|none|\\d+(,\\d+)*)$"
+    },
+    "instanceControlDefaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "log_dir": { "type": "string", "default": "/tmp" },
+        "background": { "type": "boolean", "default": true }
+      }
+    },
+    "instanceControl": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "log_dir": { "type": "string" },
+        "log_file": { "type": "string" },
+        "background": { "type": "boolean" },
+        "enabled": { "type": "boolean", "default": true },
+        "gpu_ids": { "$ref": "#/$defs/gpuIds" }
+      }
+    },
+    "serverArgs": {
+      "type": "object",
+      "description": "llama-server arguments. Keys are converted from snake_case to --kebab-case at runtime. Unknown keys are allowed.",
+      "properties": {
+        "host": { "type": "string", "default": "0.0.0.0" },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "alias": { "type": "string" },
+        "model": {
+          "type": "string",
+          "description": "Model path inside the container. For sharded GGUF, point to the first shard file."
+        },
+        "ctx_size": { "type": "integer", "minimum": 256 },
+        "n_predict": { "type": "integer", "minimum": 1 },
+        "n_gpu_layers": { "type": "integer", "minimum": 0 },
+        "metrics": { "type": "boolean" },
+        "flash_attn": {
+          "type": "string",
+          "description": "llama-server expects a value, not a boolean.",
+          "enum": ["on", "off", "auto"]
+        },
+        "extra_args": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Raw args injected verbatim (in order) before other generated flags."
+        }
+      },
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "string" },
+          { "type": "number" },
+          { "type": "integer" },
+          { "type": "boolean" },
+          {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                { "type": "string" },
+                { "type": "number" },
+                { "type": "integer" },
+                { "type": "boolean" }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "modelInstance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "control": { "$ref": "#/$defs/instanceControl" },
+        "server": { "$ref": "#/$defs/serverArgs" }
+      }
+    }
+  }
+}
+

@@ -1,7 +1,7 @@
 [master]
 enable = true
-# Use default llama-server path (assumed in PATH)
-llama_cpp_path = "llama-server"
+# Use the llama.cpp build in the infer-dev workspace (mounted from host).
+llama_cpp_path = "/hard/volume/workspace/llama-cpp/build/bin/llama-server"
 
 [instance.control]
 log_dir = "/tmp"
@@ -9,8 +9,9 @@ background = true
 
 [instance.server]
 host = "0.0.0.0"
-flash_attn = true
 metrics = true
+# llama-server expects an explicit value: on|off|auto
+flash_attn = "auto"
 
 [instance.glm-4-7-q2k]
     [instance.glm-4-7-q2k.control]
@@ -18,11 +19,18 @@ metrics = true
     gpu_ids = "0,1,2,3"
     log_file = "/tmp/glm-4.7-q2k.log"
 
-    [instance.glm-4-7-q2k.server]
-    # Path inside container (mounted via /hard/volume/data/llm-models)
-    model = "/hard/volume/data/llm-models/GLM-4.7-GGUF/Q2_K"
+[instance.glm-4-7-q2k.server]
+    # Path inside container (mounted via stage-2 mount in user_config.yml)
+    # For sharded GGUF, point to the first shard.
+    model = "/llm-models/GLM-4.7-GGUF/Q2_K/GLM-4.7-Q2_K-00001-of-00003.gguf"
     port = 8080
     alias = "glm4"
     ctx_size = 8192
-    # Ensure all GPUs are used for offloading
-    n_gpu_layers = 999
+    # Default token budget (can still be overridden per-request).
+    n_predict = 2048
+    # GPU offload (equivalent to -ngl 99). Adjust for your VRAM.
+    n_gpu_layers = 99
+
+# Note:
+# - GLM-4.7 prompt/template and stop tokens are typically handled client-side (per request),
+#   not via this server config.

@@ -77,12 +77,7 @@ stage_1:
   device:
     type: gpu # can be cpu or gpu
 
-  mount:
-    llm_models:
-      type: host
-      dst_path: /hard/volume/data/llm-models
-      host_path: /data1/huangzhe/llm-models
-      volume_name: null
+  mount: {}
 
   # custom scripts
   custom:
@@ -116,7 +111,8 @@ stage_2:
 
   # port mapping, will be appended to the stage-1 port mapping
   # see https://docs.docker.com/compose/networking/
-  ports: []
+  ports:
+    - '11980:8080'
 
   # device settings, will override the stage-1 device settings
   device:
@@ -152,10 +148,10 @@ stage_2:
   # the volumes can be given any names, mounted anywhere
   # the volume type cannot be 'image', or otherwise it will be ignored
   mount:
-    llm_models:
+    glm_4_7_gguf_q2k:
       type: host
-      dst_path: /hard/volume/data/llm-models
-      host_path: /data1/huangzhe/llm-models
+      dst_path: /llm-models/GLM-4.7-GGUF/Q2_K
+      host_path: /data1/huangzhe/llm-models/GLM-4.7-GGUF/Q2_K
       volume_name: null
 
   # custom scripts in stage-2, run after stage-1 custom scripts

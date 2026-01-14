@@ -4,6 +4,10 @@
 
 Defines the structure and behavior of the `.toml` configuration file used by the `check-and-run-llama-cpp.sh` script to launch `llama-server`.
 
+## Schema
+
+See `context/design/contract/llama-cpp-config-toml.schema.json` for a JSON Schema representation of this TOML contract (useful for validation and tooling).
+
 ## File Location
 
 The path to this file is specified by the environment variable `AUTO_INFER_LLAMA_CPP_CONFIG`.
@@ -61,11 +65,12 @@ Each key in `[instance]` that is **not** `control` or `server` is treated as a s
     - *Exception*: Specific keys might have short aliases (e.g., `model` -> `-m`), but using the full name (e.g., `model` -> `--model`) is preferred for consistency. The script will use the long form by default.
 
 2.  **Value Handling**:
-    - **String/Number**: Converted to `key=value` or `key value`.
+    - **String/Number**: Converted to `--key value`.
         - Special Note for `model`: This path must be a valid path **inside the container**. It can point to:
             1.  A single `.gguf` file.
-            2.  A directory containing split model shards (e.g., `/path/to/model/shards`). `llama-server` automatically detects and loads shards from the directory.
-    - **Boolean**: `true` adds the flag; `false` is ignored.
+            2.  A sharded GGUF model: point to the *first* shard file (e.g., `...-00001-of-00003.gguf`) so `llama-server` can load the full set.
+    - **Boolean**: Use only for “valueless” flags. `true` adds `--flag`; `false` is ignored.
+        - If a flag requires a value (e.g., `flash_attn`), provide a string value instead.
     - **List/Array**: Repeated arguments (e.g., `--lora`).
     - **reserved key**: `extra_args` (List of raw strings).
 
@@ -85,7 +90,9 @@ background = true
 # Common defaults for all models
 host = "0.0.0.0"
 n_gpu_layers = 99
-flash_attn = true
+metrics = true
+# llama-server expects an explicit value: on|off|auto
+flash_attn = "auto"
 
 # Instance 1: Llama 3 (Single File)
 [instance.llama-3-8b]
@@ -95,11 +102,11 @@ flash_attn = true
     alias = "llama3"
     ctx_size = 8192
 
-# Instance 2: GLM-4 (Directory of Shards)
+# Instance 2: GLM-4 (Sharded GGUF)
 [instance.glm-4]
     [instance.glm-4.server]
-    # Points to a directory containing split GGUF files
-    model = "/path/to/models/glm-4-shards"
+    # Points to the first shard; remaining shards are loaded automatically
+    model = "/path/to/models/GLM-4.7-Q2_K-00001-of-00003.gguf"
     port = 8081
     alias = "glm4"
 ```

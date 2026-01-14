@@ -9,3 +9,56 @@ The repository is organized as a set of docker configuration directories.
 `dockers/<docker-dir>/`
 
 Each directory contains relevant Dockerfiles, Docker Compose files, and related scripts for a specific environment or tool.
+
+## llama.cpp inference (infer-dev)
+
+`dockers/infer-dev` is a PeiDocker-based CUDA dev container that can auto-launch `llama-server` on startup.
+
+### 1) Configure (required after changes)
+
+```bash
+# Keep durable edits in user_config.persist.yml, then copy to user_config.yml
+cp dockers/infer-dev/user_config.persist.yml dockers/infer-dev/user_config.yml
+
+# Regenerate docker-compose.yml / merged.* from user_config.yml
+pixi run pei-docker-cli configure -p dockers/infer-dev --with-merged
+```
+
+### 2) Build the images
+
+```bash
+docker compose -f dockers/infer-dev/docker-compose.yml build stage-1
+docker compose -f dockers/infer-dev/docker-compose.yml build stage-2
+```
+
+### 3) Start llama-server via TOML (auto-launch hook)
+
+The entry hook reads `AUTO_INFER_LLAMA_CPP_CONFIG` and launches one or more servers.
+
+Example (GLM-4.7 Q2_K):
+- Config: `dockers/infer-dev/model-configs/glm-4.7-q2k.toml`
+- Host port `11980` → container port `8080` (see `dockers/infer-dev/docker-compose.yml`)
+
+Run with the env var set (publish service ports and mount the config directory into the container):
+
+```bash
+docker compose -f dockers/infer-dev/docker-compose.yml run -d -P --name infer-glm \
+  -v "$PWD/dockers/infer-dev/model-configs:/model-configs:ro" \
+  -e AUTO_INFER_LLAMA_CPP_CONFIG=/model-configs/glm-4.7-q2k.toml \
+  stage-2 sleep infinity
+```
+
+Verify:
+
+```bash
+curl http://127.0.0.1:11980/v1/models
+curl http://127.0.0.1:11980/v1/chat/completions -H 'Content-Type: application/json' -d '{
+  "model": "glm4",
+  "messages": [{"role": "user", "content": "Hello"}],
+  "max_tokens": 64
+}'
+```
+
+Notes:
+- The sample config mounts a specific model directory to `/llm-models/...` (not the entire host model tree); adjust `dockers/infer-dev/user_config.persist.yml` + rerun `pei-docker-cli configure` to test other models.
+- `llama_cpp_path` in the sample TOML points at the workspace build (`/hard/volume/workspace/llama-cpp/build/bin/llama-server`); ensure `llama-cpp` is built there (see `dockers/infer-dev/app-setup/20260113-setup-llama-cpp.md`).
