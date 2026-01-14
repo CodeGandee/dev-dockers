@@ -43,6 +43,7 @@ services:
     - .container/app:/hard/volume/app
     - .container/data:/hard/volume/data
     - .container/workspace:/hard/volume/workspace
+    - /data1/huangzhe/llm-models:/hard/volume/data/llm-models
   stage-1:
     profiles:
     - build-helper

@@ -1,0 +1,28 @@
+[master]
+enable = true
+# Use default llama-server path (assumed in PATH)
+llama_cpp_path = "llama-server"
+
+[instance.control]
+log_dir = "/tmp"
+background = true
+
+[instance.server]
+host = "0.0.0.0"
+flash_attn = true
+metrics = true
+
+[instance.glm-4-7-q2k]
+    [instance.glm-4-7-q2k.control]
+    # Use GPUs 0, 1, 2, 3
+    gpu_ids = "0,1,2,3"
+    log_file = "/tmp/glm-4.7-q2k.log"
+
+    [instance.glm-4-7-q2k.server]
+    # Path inside container (mounted via /hard/volume/data/llm-models)
+    model = "/hard/volume/data/llm-models/GLM-4.7-GGUF/Q2_K"
+    port = 8080
+    alias = "glm4"
+    ctx_size = 8192
+    # Ensure all GPUs are used for offloading
+    n_gpu_layers = 999

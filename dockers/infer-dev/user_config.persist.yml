@@ -151,7 +151,12 @@ stage_2:
   # mount external volumes to container
   # the volumes can be given any names, mounted anywhere
   # the volume type cannot be 'image', or otherwise it will be ignored
-  mount: {}
+  mount:
+    llm_models:
+      type: host
+      dst_path: /hard/volume/data/llm-models
+      host_path: /data1/huangzhe/llm-models
+      volume_name: null
 
   # custom scripts in stage-2, run after stage-1 custom scripts
   # Scripts can include parameters: 'script.sh --param1=value1 --param2="value with spaces"'
@@ -174,4 +179,5 @@ stage_2:
     on_user_login: []
 
     # custom entry point script - replaces shell startup in system entrypoint
-    on_entry: []
+    on_entry:
+      - 'custom/infer-dev-entry.sh /bin/bash'

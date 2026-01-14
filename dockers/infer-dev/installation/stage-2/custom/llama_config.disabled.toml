@@ -1,0 +1,6 @@
+# Minimal config used to validate the entry hook wiring.
+# Setting `enable = false` prevents launching any servers.
+
+[master]
+enable = false
+
