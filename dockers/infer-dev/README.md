@@ -44,6 +44,45 @@ docker compose up -d
 
 On container start (`docker compose up`, `docker run`, `docker compose run`), the following happens:
 
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant D as Docker
+    participant P as PeiDocker entrypoint<br/>(/entrypoint.sh)
+    participant E as infer-dev-entry.sh
+    participant I as install-llama-cpp-pkg.sh
+    participant L as check-and-run-llama-cpp.sh
+    participant S as llama-server
+
+    U->>D: docker run / compose up
+    D->>P: start container
+    P->>P: init + /soft links + sshd
+    P->>E: stage-2 custom entry
+    E->>E: link helper scripts<br/>(/soft/app/llama-cpp/*)
+
+    alt get pkg on boot<br/>AUTO_INFER_LLAMA_CPP_GET_PKG_ON_BOOT=1|true<br/>and AUTO_INFER_LLAMA_CPP_PKG_PATH set
+        E->>I: install llama.cpp pkg
+        I->>I: copy to /soft/app/cache
+        I->>I: extract to /soft/app/llama-cpp
+    else
+        E-->>E: skip pkg install
+    end
+
+    alt auto serve on boot<br/>AUTO_INFER_LLAMA_CPP_ON_BOOT=1|true<br/>and AUTO_INFER_LLAMA_CPP_CONFIG set
+        E->>L: launch instances<br/>(parse TOML)
+        L->>S: start llama-server
+    else
+        E-->>U: no auto-serve
+    end
+
+    opt manual after boot
+        U->>D: docker exec ...<br/>get-llama-cpp-pkg.sh
+        D->>I: install llama.cpp pkg
+        U->>D: docker exec ...<br/>check-and-run-llama-cpp.sh
+        D->>L: launch instances
+    end
+```
+
 1. **PeiDocker entrypoint** (`/entrypoint.sh`) runs the stage init:
    - creates `/soft/*` links (e.g., `/soft/workspace` → `/hard/volume/workspace`)
    - runs any configured stage-1/stage-2 `on_first_run` / `on_every_run` hooks
