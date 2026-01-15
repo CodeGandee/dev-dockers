@@ -163,14 +163,19 @@ log "  name:  $CONTAINER_NAME"
 log "  port:  ${HOST_PORT} -> 8080"
 log "  llama auto serve: $LLAMA_AUTO_SERVE"
 
-docker run -d \
-  --name "$CONTAINER_NAME" \
-  --gpus all \
-  --add-host host.docker.internal:host-gateway \
-  -p "${HOST_PORT}:8080" \
-  "${RUN_ENVS[@]}" \
-  "${RUN_MOUNTS[@]}" \
-  "$IMAGE" sleep infinity >/dev/null
+cmd=(docker run -d
+  --name "$CONTAINER_NAME"
+  --gpus all
+  --add-host host.docker.internal:host-gateway
+  -p "${HOST_PORT}:8080"
+  "${RUN_ENVS[@]}"
+  "${RUN_MOUNTS[@]}"
+  "$IMAGE" sleep infinity
+)
+
+printf '[demo] %q ' "${cmd[@]}"; echo
+
+"${cmd[@]}" >/dev/null
 
 log "Logs: docker logs -f $CONTAINER_NAME"
 log "Stop: docker rm -f $CONTAINER_NAME"
