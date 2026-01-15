@@ -29,7 +29,8 @@ It is generated/configured via **PeiDocker** and uses a 2-stage image:
   - Set `AUTO_INFER_LLAMA_CPP_PKG_PATH` to a mounted archive (`.tar`, `.tar.gz`/`.tgz`, `.zip`) containing:
     - `README*` at archive root
     - `bin/llama-server` and the required `bin/*.so*` in the same folder
-  - On boot, the archive is copied to `/soft/app/cache/` and extracted into `/soft/app/llama-cpp/` (idempotent via sha256).
+  - Auto-install on boot is **off by default**. Enable with `AUTO_INFER_LLAMA_CPP_GET_PKG_ON_BOOT=1` (or `true`).
+  - Manual install after boot: run `/soft/app/llama-cpp/get-llama-cpp-pkg.sh` (or `/soft/app/llama-cpp/install-llama-cpp-pkg.sh`).
 - **Dev tooling in stage-2** (installed via `user_config.yml`): Pixi, Node.js, Bun, and agent CLIs (as configured).
 
 ## Quick start
@@ -48,8 +49,10 @@ On container start (`docker compose up`, `docker run`, `docker compose run`), th
    - runs any configured stage-1/stage-2 `on_first_run` / `on_every_run` hooks
    - starts `sshd`
 2. **Stage-2 custom entry** (`dockers/infer-dev/installation/stage-2/custom/infer-dev-entry.sh`) runs next:
-   - **If** `AUTO_INFER_LLAMA_CPP_PKG_PATH=/path/to/pkg.(tar|tar.gz|tgz|zip)` is set: installs the llama.cpp bundle (copies to `/soft/app/cache/`, extracts to `/soft/app/llama-cpp/`)
-   - always exposes a manual helper: `/soft/app/llama-cpp/check-and-run-llama-cpp.sh`
+   - always exposes helper scripts:
+     - `/soft/app/llama-cpp/get-llama-cpp-pkg.sh` (manual llama.cpp bundle install)
+     - `/soft/app/llama-cpp/check-and-run-llama-cpp.sh` (manual llama-server start)
+   - **If** `AUTO_INFER_LLAMA_CPP_GET_PKG_ON_BOOT=1|true` **and** `AUTO_INFER_LLAMA_CPP_PKG_PATH=/path/to/pkg.(tar|tar.gz|tgz|zip)` is set: installs the llama.cpp bundle (copies to `/soft/app/cache/`, extracts to `/soft/app/llama-cpp/`)
    - **If** `AUTO_INFER_LLAMA_CPP_ON_BOOT=1|true` **and** `AUTO_INFER_LLAMA_CPP_CONFIG=/path/to/config.toml` exists: auto-starts llama-server instance(s)
 3. **llama-server launcher** (`check-and-run-llama-cpp.sh`) behavior:
    - skips if `[master].enable=false`

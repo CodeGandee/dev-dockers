@@ -3,7 +3,7 @@ enable = true
 # Optional: override the llama-server executable.
 #
 # If omitted, `check-and-run-llama-cpp.sh` prefers:
-#  1) /soft/app/llama-cpp/bin/llama-server          (installed via AUTO_INFER_LLAMA_CPP_PKG_PATH)
+#  1) /soft/app/llama-cpp/bin/llama-server          (installed via AUTO_INFER_LLAMA_CPP_PKG_PATH + get-llama-cpp-pkg.sh)
 #  2) /hard/volume/workspace/llama-cpp/build/bin/llama-server
 #  3) llama-server                                 (PATH)
 # llama_cpp_path = "/soft/app/llama-cpp/bin/llama-server"

@@ -10,6 +10,21 @@ die() {
   exit 2
 }
 
+ensure_helper_links() {
+  local helper_src="/pei-from-host/stage-2/custom/check-and-run-llama-cpp.sh"
+  local installer_src="/pei-from-host/stage-2/custom/install-llama-cpp-pkg.sh"
+
+  if [[ ! -d "$INSTALL_DIR" ]]; then
+    return 0
+  fi
+
+  ln -sf "$helper_src" "$INSTALL_DIR/check-and-run-llama-cpp.sh" 2>/dev/null || \
+    log "Warning: could not link helper into $INSTALL_DIR (check permissions)."
+  ln -sf "$installer_src" "$INSTALL_DIR/install-llama-cpp-pkg.sh" 2>/dev/null || \
+    log "Warning: could not link installer into $INSTALL_DIR (check permissions)."
+  ln -sf "$installer_src" "$INSTALL_DIR/get-llama-cpp-pkg.sh" 2>/dev/null || true
+}
+
 PKG_SRC="${AUTO_INFER_LLAMA_CPP_PKG_PATH:-}"
 if [[ -z "$PKG_SRC" ]]; then
   log "AUTO_INFER_LLAMA_CPP_PKG_PATH not set; skipping."
@@ -73,6 +88,7 @@ sys.exit(0 if meta.get("archive_name") == want_name and meta.get("sha256") == wa
 PY
   then
     log "Already installed from $PKG_BASENAME ($PKG_SHA256); skipping extraction."
+    ensure_helper_links
     exit 0
   fi
 fi
@@ -215,8 +231,9 @@ log "Installed."
 log "  llama-server: $INSTALL_DIR/bin/llama-server"
 log "  cached archive: $PKG_DST"
 
+ensure_helper_links
+
 if [[ -n "$BACKUP_DIR" ]]; then
   log "Removing previous install backup: $BACKUP_DIR"
   rm -rf "$BACKUP_DIR"
 fi
-

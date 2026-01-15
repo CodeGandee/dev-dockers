@@ -66,4 +66,4 @@ curl http://127.0.0.1:11980/v1/chat/completions -H 'Content-Type: application/js
 
 Notes:
 - The sample config mounts a specific model directory to `/llm-models/...` (not the entire host model tree); adjust `dockers/infer-dev/user_config.persist.yml` + rerun `pei-docker-cli configure` to test other models.
-- `AUTO_INFER_LLAMA_CPP_PKG_PATH` can install a prebuilt llama.cpp bundle into `/soft/app/llama-cpp` on boot (archive is cached under `/soft/app/cache`).
+- `AUTO_INFER_LLAMA_CPP_PKG_PATH` + `AUTO_INFER_LLAMA_CPP_GET_PKG_ON_BOOT=1|true` installs a prebuilt llama.cpp bundle into `/soft/app/llama-cpp` on boot (archive is cached under `/soft/app/cache`). If auto-install is off, run `/soft/app/llama-cpp/get-llama-cpp-pkg.sh` inside the container.

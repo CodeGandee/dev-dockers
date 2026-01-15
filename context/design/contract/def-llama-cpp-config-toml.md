@@ -24,7 +24,7 @@ The TOML file uses a hierarchical structure where global defaults can be defined
   - `enable` (Optional, bool): Global switch to enable/disable the entire auto-launch process. Default: `true`.
   - `llama_cpp_path` (Optional, string): Path to the `llama-server` executable **inside the container**.
     - If omitted/empty, the launcher will choose the first available option:
-      1. `/soft/app/llama-cpp/bin/llama-server` (when installed via `AUTO_INFER_LLAMA_CPP_PKG_PATH`)
+      1. `/soft/app/llama-cpp/bin/llama-server` (when installed via `AUTO_INFER_LLAMA_CPP_PKG_PATH` using `get-llama-cpp-pkg.sh` or `AUTO_INFER_LLAMA_CPP_GET_PKG_ON_BOOT=1`)
       2. `/hard/volume/workspace/llama-cpp/build/bin/llama-server`
       3. `llama-server` (assumed to be in `PATH`)
 
