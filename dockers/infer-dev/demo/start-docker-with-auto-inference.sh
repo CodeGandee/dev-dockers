@@ -39,6 +39,7 @@ Options:
   --llama-pkg <path-to-pkg>         llama.cpp bundle (.tar|.tar.gz|.tgz|.zip), installed on boot
   --llama-config <path-to-config>   TOML config file for check-and-run-llama-cpp.sh
   --model-dir <model-dir>           Model directory mounted to /llm-models/<basename>
+  --dry-run                         Print the docker run command and exit
   -h, --help                        Show this help
 
 Notes:
@@ -57,6 +58,7 @@ LLAMA_AUTO_SERVE=off
 LLAMA_PKG=""
 LLAMA_CONFIG=""
 MODEL_HOST_DIR=""
+DRY_RUN=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -75,6 +77,8 @@ while [[ $# -gt 0 ]]; do
     --model-dir)
       [[ $# -ge 2 ]] || die "--model-dir requires a path"
       MODEL_HOST_DIR="$2"; shift 2 ;;
+    --dry-run)
+      DRY_RUN=1; shift ;;
     -h|--help)
       usage; exit 0 ;;
     *)
@@ -173,7 +177,13 @@ cmd=(docker run -d
   "$IMAGE" sleep infinity
 )
 
-printf '[demo] %q ' "${cmd[@]}"; echo
+printf '[demo] '
+printf '%q ' "${cmd[@]}"
+echo
+
+if [[ "$DRY_RUN" -eq 1 ]]; then
+  exit 0
+fi
 
 "${cmd[@]}" >/dev/null
 
