@@ -39,6 +39,25 @@ docker compose build stage-2
 docker compose up -d
 ```
 
+## Container Workflow
+
+On container start (`docker compose up`, `docker run`, `docker compose run`), the following happens:
+
+1. **PeiDocker entrypoint** (`/entrypoint.sh`) runs the stage init:
+   - creates `/soft/*` links (e.g., `/soft/workspace` → `/hard/volume/workspace`)
+   - runs any configured stage-1/stage-2 `on_first_run` / `on_every_run` hooks
+   - starts `sshd`
+2. **Stage-2 custom entry** (`dockers/infer-dev/installation/stage-2/custom/infer-dev-entry.sh`) runs next:
+   - **If** `AUTO_INFER_LLAMA_CPP_PKG_PATH=/path/to/pkg.(tar|tar.gz|tgz|zip)` is set: installs the llama.cpp bundle (copies to `/soft/app/cache/`, extracts to `/soft/app/llama-cpp/`)
+   - always exposes a manual helper: `/soft/app/llama-cpp/check-and-run-llama-cpp.sh`
+   - **If** `AUTO_INFER_LLAMA_CPP_ON_BOOT=1|true` **and** `AUTO_INFER_LLAMA_CPP_CONFIG=/path/to/config.toml` exists: auto-starts llama-server instance(s)
+3. **llama-server launcher** (`check-and-run-llama-cpp.sh`) behavior:
+   - skips if `[master].enable=false`
+   - picks `llama-server` from `[master].llama_cpp_path` (if set) or falls back to `/soft/app/llama-cpp/bin/llama-server` → `/hard/volume/workspace/llama-cpp/build/bin/llama-server` → `llama-server` (PATH)
+   - launches each enabled `[instance.<name>]`, applying merged `server` args; if `gpu_ids` is set it exports `CUDA_VISIBLE_DEVICES` for that instance; logs go to `log_file`/`log_dir`
+
+Manual serving (when `AUTO_INFER_LLAMA_CPP_ON_BOOT` is unset/false): run `/soft/app/llama-cpp/check-and-run-llama-cpp.sh` inside the container.
+
 ## llama.cpp inference
 
 Example config: `dockers/infer-dev/model-configs/glm-4.7-q2k.toml` (GLM-4.7 Q2_K, sharded GGUF).
