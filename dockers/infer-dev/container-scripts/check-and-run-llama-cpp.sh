@@ -46,7 +46,18 @@ def parse_toml(file_path):
         print(json.dumps([]))
         return
 
-    llama_executable = master_config.get("llama_cpp_path", "llama-server")
+    llama_executable = master_config.get("llama_cpp_path") or ""
+    if not llama_executable:
+        # Prefer a pkg-installed llama.cpp, then the infer-dev workspace build, then PATH.
+        candidates = (
+            "/soft/app/llama-cpp/bin/llama-server",
+            "/hard/volume/workspace/llama-cpp/build/bin/llama-server",
+            "llama-server",
+        )
+        for c in candidates:
+            if c == "llama-server" or os.path.isfile(c):
+                llama_executable = c
+                break
 
     # Root 'instance' table
     instances_data = data.get("instance", {})
@@ -153,6 +164,7 @@ import json
 import os
 import subprocess
 import sys
+import shutil
 
 data = json.loads(sys.argv[1])
 
@@ -165,6 +177,19 @@ for instance in data:
     gpu_ids = instance.get("gpu_ids")  # string or None
 
     env = os.environ.copy()
+
+    # Ensure the executable's directory is in LD_LIBRARY_PATH so bundled *.so are discoverable
+    # (common for llama.cpp builds that ship libs next to the binaries).
+    resolved_exe = None
+    if os.path.sep in executable:
+        resolved_exe = executable
+    else:
+        resolved_exe = shutil.which(executable)
+    exe_dir = os.path.dirname(resolved_exe) if resolved_exe else ""
+    if exe_dir:
+        prev = env.get("LD_LIBRARY_PATH", "")
+        env["LD_LIBRARY_PATH"] = f"{exe_dir}:{prev}" if prev else exe_dir
+
     if gpu_ids is not None and gpu_ids != "all":
         if gpu_ids == "none":
             env["CUDA_VISIBLE_DEVICES"] = ""
@@ -179,7 +204,7 @@ for instance in data:
     if gpu_ids is not None:
         print(f"  GPUs: {gpu_ids}")
 
-    cmd = [executable, *map(str, cmd_list)]
+    cmd = [resolved_exe or executable, *map(str, cmd_list)]
     with open(log_file, "ab", buffering=0) as f:
         if background:
             proc = subprocess.Popen(cmd, stdout=f, stderr=subprocess.STDOUT, env=env)

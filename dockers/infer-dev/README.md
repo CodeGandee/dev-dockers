@@ -15,12 +15,21 @@ It is generated/configured via **PeiDocker** and uses a 2-stage image:
 ## Key features (recent work)
 
 - **CUDA + NVIDIA GPU** support (Compose requests all GPUs).
-- **Persistent mounts**:
-  - `dockers/infer-dev/.container/app` → `/hard/volume/app`
-  - `dockers/infer-dev/.container/data` → `/hard/volume/data`
-  - `dockers/infer-dev/.container/workspace` → `/hard/volume/workspace`
-  - Host models dir (see `user_config.yml`) → `/hard/volume/data/llm-models`
-- **Auto-launch llama.cpp server**: set `AUTO_INFER_LLAMA_CPP_CONFIG` to a TOML file (see `examples/llama_config.toml`) and the entry hook will start the configured `llama-server` instances.
+- **Storage + mounts**
+  - `storage.app` and `storage.data` use `image` storage (not host-mounted).
+  - `storage.workspace` is host-mounted: `dockers/infer-dev/.container/workspace` → `/hard/volume/workspace`.
+  - Models are mounted via `stage_2.mount` (example: `/data1/huangzhe/llm-models/GLM-4.7-GGUF` → `/llm-models/GLM-4.7-GGUF`). Do **not** mount the entire host model tree.
+- **Port mapping**
+  - Host `11980` → container `8080` (llama-server).
+- **Optional auto-launch llama.cpp server**:
+  - Set `AUTO_INFER_LLAMA_CPP_ON_BOOT=1` (or `true`) to enable auto-start on container boot.
+  - Set `AUTO_INFER_LLAMA_CPP_CONFIG` to a TOML file to define one or more `llama-server` instances.
+  - If `AUTO_INFER_LLAMA_CPP_ON_BOOT` is unset/false, nothing auto-starts; run `/soft/app/llama-cpp/check-and-run-llama-cpp.sh` manually after boot.
+- **Optional on-boot llama.cpp package install**
+  - Set `AUTO_INFER_LLAMA_CPP_PKG_PATH` to a mounted archive (`.tar`, `.tar.gz`/`.tgz`, `.zip`) containing:
+    - `README*` at archive root
+    - `bin/llama-server` and the required `bin/*.so*` in the same folder
+  - On boot, the archive is copied to `/soft/app/cache/` and extracted into `/soft/app/llama-cpp/` (idempotent via sha256).
 - **Dev tooling in stage-2** (installed via `user_config.yml`): Pixi, Node.js, Bun, and agent CLIs (as configured).
 
 ## Quick start
@@ -28,6 +37,31 @@ It is generated/configured via **PeiDocker** and uses a 2-stage image:
 ```bash
 docker compose build stage-2
 docker compose up -d
+```
+
+## llama.cpp inference
+
+Example config: `dockers/infer-dev/model-configs/glm-4.7-q2k.toml` (GLM-4.7 Q2_K, sharded GGUF).
+
+Run an auto-start container (publishes port `11980` and mounts the config directory):
+
+```bash
+docker compose run -d --service-ports --name infer-glm \
+  -v "$PWD/dockers/infer-dev/model-configs:/model-configs:ro" \
+  -e AUTO_INFER_LLAMA_CPP_ON_BOOT=1 \
+  -e AUTO_INFER_LLAMA_CPP_CONFIG=/model-configs/glm-4.7-q2k.toml \
+  stage-2 sleep infinity
+```
+
+Verify:
+
+```bash
+curl http://127.0.0.1:11980/v1/models
+curl http://127.0.0.1:11980/v1/chat/completions -H 'Content-Type: application/json' -d '{
+  "model": "glm4",
+  "messages": [{"role": "user", "content": "Hello"}],
+  "max_tokens": 64
+}'
 ```
 
 ## Editing configuration (important)

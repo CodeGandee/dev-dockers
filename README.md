@@ -33,7 +33,11 @@ docker compose -f dockers/infer-dev/docker-compose.yml build stage-2
 
 ### 3) Start llama-server via TOML (auto-launch hook)
 
-The entry hook reads `AUTO_INFER_LLAMA_CPP_CONFIG` and launches one or more servers.
+The entry hook can auto-start `llama-server` instances, but it is **off by default**.
+
+- Set `AUTO_INFER_LLAMA_CPP_ON_BOOT=1` (or `true`) to enable auto-start on boot.
+- Set `AUTO_INFER_LLAMA_CPP_CONFIG` to point at a TOML file with instance definitions.
+- If auto-start is disabled, you can run `/soft/app/llama-cpp/check-and-run-llama-cpp.sh` manually inside the container.
 
 Example (GLM-4.7 Q2_K):
 - Config: `dockers/infer-dev/model-configs/glm-4.7-q2k.toml`
@@ -42,8 +46,9 @@ Example (GLM-4.7 Q2_K):
 Run with the env var set (publish service ports and mount the config directory into the container):
 
 ```bash
-docker compose -f dockers/infer-dev/docker-compose.yml run -d -P --name infer-glm \
+docker compose -f dockers/infer-dev/docker-compose.yml run -d --service-ports --name infer-glm \
   -v "$PWD/dockers/infer-dev/model-configs:/model-configs:ro" \
+  -e AUTO_INFER_LLAMA_CPP_ON_BOOT=1 \
   -e AUTO_INFER_LLAMA_CPP_CONFIG=/model-configs/glm-4.7-q2k.toml \
   stage-2 sleep infinity
 ```
@@ -61,4 +66,4 @@ curl http://127.0.0.1:11980/v1/chat/completions -H 'Content-Type: application/js
 
 Notes:
 - The sample config mounts a specific model directory to `/llm-models/...` (not the entire host model tree); adjust `dockers/infer-dev/user_config.persist.yml` + rerun `pei-docker-cli configure` to test other models.
-- `llama_cpp_path` in the sample TOML points at the workspace build (`/hard/volume/workspace/llama-cpp/build/bin/llama-server`); ensure `llama-cpp` is built there (see `dockers/infer-dev/app-setup/20260113-setup-llama-cpp.md`).
+- `AUTO_INFER_LLAMA_CPP_PKG_PATH` can install a prebuilt llama.cpp bundle into `/soft/app/llama-cpp` on boot (archive is cached under `/soft/app/cache`).

@@ -21,12 +21,13 @@
     "instance": {
       "type": "object",
       "description": "Instance tables. Reserved keys: 'control' and 'server'. All other keys are treated as model instance names.",
+      "additionalProperties": false,
       "properties": {
-        "control": { "$ref": "#/$defs/instanceControlDefaults" },
+        "control": { "$ref": "#/$defs/instanceControl" },
         "server": { "$ref": "#/$defs/serverArgs" }
       },
       "patternProperties": {
-        "^[A-Za-z0-9][A-Za-z0-9._-]*$": { "$ref": "#/$defs/modelInstance" }
+        "^(?!control$)(?!server$)[A-Za-z0-9][A-Za-z0-9._-]*$": { "$ref": "#/$defs/modelInstance" }
       }
     }
   },
@@ -35,14 +36,6 @@
       "type": "string",
       "description": "GPU visibility selection: 'all', 'none', or comma-separated GPU indices.",
       "pattern": "^(all|none|\\d+(,\\d+)*)$"
-    },
-    "instanceControlDefaults": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "log_dir": { "type": "string", "default": "/tmp" },
-        "background": { "type": "boolean", "default": true }
-      }
     },
     "instanceControl": {
       "type": "object",
@@ -66,9 +59,9 @@
           "type": "string",
           "description": "Model path inside the container. For sharded GGUF, point to the first shard file."
         },
-        "ctx_size": { "type": "integer", "minimum": 256 },
-        "n_predict": { "type": "integer", "minimum": 1 },
-        "n_gpu_layers": { "type": "integer", "minimum": 0 },
+        "ctx_size": { "type": "integer", "minimum": 0 },
+        "n_predict": { "type": "integer", "minimum": -1 },
+        "n_gpu_layers": { "type": "integer", "minimum": -1 },
         "metrics": { "type": "boolean" },
         "flash_attn": {
           "type": "string",
@@ -111,4 +104,3 @@
     }
   }
 }
-

@@ -1,7 +1,12 @@
 [master]
 enable = true
-# Use the llama.cpp build in the infer-dev workspace (mounted from host).
-llama_cpp_path = "/hard/volume/workspace/llama-cpp/build/bin/llama-server"
+# Optional: override the llama-server executable.
+#
+# If omitted, `check-and-run-llama-cpp.sh` prefers:
+#  1) /soft/app/llama-cpp/bin/llama-server          (installed via AUTO_INFER_LLAMA_CPP_PKG_PATH)
+#  2) /hard/volume/workspace/llama-cpp/build/bin/llama-server
+#  3) llama-server                                 (PATH)
+# llama_cpp_path = "/soft/app/llama-cpp/bin/llama-server"
 
 [instance.control]
 log_dir = "/tmp"
@@ -10,8 +15,17 @@ background = true
 [instance.server]
 host = "0.0.0.0"
 metrics = true
+# For GLM-4.7, llama.cpp/llama-server should use Jinja templates.
+jinja = true
+chat_template = "chatglm4"
 # llama-server expects an explicit value: on|off|auto
-flash_attn = "auto"
+flash_attn = "on"
+# Try to fit unset args into device memory.
+fit = "on"
+# Recommended baseline for GLM-4.7 (adjust as needed).
+ctx_size = 16384
+temp = 1.0
+top_p = 0.95
 
 [instance.glm-4-7-q2k]
     [instance.glm-4-7-q2k.control]
@@ -25,11 +39,10 @@ flash_attn = "auto"
     model = "/llm-models/GLM-4.7-GGUF/Q2_K/GLM-4.7-Q2_K-00001-of-00003.gguf"
     port = 8080
     alias = "glm4"
-    ctx_size = 8192
     # Default token budget (can still be overridden per-request).
     n_predict = 2048
-    # GPU offload (equivalent to -ngl 99). Adjust for your VRAM.
-    n_gpu_layers = 99
+    # GPU offload (equivalent to -ngl -1). Adjust for your VRAM.
+    n_gpu_layers = -1
 
 # Note:
 # - GLM-4.7 prompt/template and stop tokens are typically handled client-side (per request),

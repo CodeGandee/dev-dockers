@@ -132,12 +132,12 @@ stage_2:
   # storage configurations
   storage:
     app:
-      type: host # auto-volume, manual-volume, host, image
-      host_path: .container/app # host directory to be mounted, in effect when type=host
+      type: image # auto-volume, manual-volume, host, image
+      host_path: .container/app # ignored when type=image
       volume_name: null # volume name, in effect when type=manual-volume
     data:
-      type: host
-      host_path: .container/data
+      type: image
+      host_path: .container/data # ignored when type=image
       volume_name: null
     workspace:
       type: host
@@ -148,10 +148,10 @@ stage_2:
   # the volumes can be given any names, mounted anywhere
   # the volume type cannot be 'image', or otherwise it will be ignored
   mount:
-    glm_4_7_gguf_q2k:
+    glm_4_7_gguf:
       type: host
-      dst_path: /llm-models/GLM-4.7-GGUF/Q2_K
-      host_path: /data1/huangzhe/llm-models/GLM-4.7-GGUF/Q2_K
+      dst_path: /llm-models/GLM-4.7-GGUF
+      host_path: /data1/huangzhe/llm-models/GLM-4.7-GGUF
       volume_name: null
 
   # custom scripts in stage-2, run after stage-1 custom scripts

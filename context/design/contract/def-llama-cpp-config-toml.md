@@ -22,7 +22,11 @@ The TOML file uses a hierarchical structure where global defaults can be defined
 ### 1. Master Configuration `[master]`
 - **Keys**:
   - `enable` (Optional, bool): Global switch to enable/disable the entire auto-launch process. Default: `true`.
-  - `llama_cpp_path` (Optional, string): Path to the `llama-server` executable **inside the container**. Default: `llama-server` (assumed to be in PATH).
+  - `llama_cpp_path` (Optional, string): Path to the `llama-server` executable **inside the container**.
+    - If omitted/empty, the launcher will choose the first available option:
+      1. `/soft/app/llama-cpp/bin/llama-server` (when installed via `AUTO_INFER_LLAMA_CPP_PKG_PATH`)
+      2. `/hard/volume/workspace/llama-cpp/build/bin/llama-server`
+      3. `llama-server` (assumed to be in `PATH`)
 
 ### 2. Global Defaults
 
@@ -89,7 +93,8 @@ background = true
 [instance.server]
 # Common defaults for all models
 host = "0.0.0.0"
-n_gpu_layers = 99
+# Note: llama.cpp supports -1 for "all layers"
+n_gpu_layers = -1
 metrics = true
 # llama-server expects an explicit value: on|off|auto
 flash_attn = "auto"
@@ -133,3 +138,7 @@ The python inline script will:
 ## Validation
 
 The script will minimally validate that `model` is present or provided via `extra_args` (though `llama-server` might complain if missing).
+
+## Runtime Notes
+
+- The launcher prepends the resolved `llama-server` binary directory to `LD_LIBRARY_PATH` so bundled `*.so` next to the binary are discoverable (common for llama.cpp builds and binary bundles).
