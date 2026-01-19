@@ -24,7 +24,7 @@ When running with `llama-server` (e.g., in `infer-dev`), ensure you:
 ### Interaction (Curl)
 You **must** provide explicit **stop tokens** to prevent the model from generating garbage or hallucinating.
 
-**Stop tokens:** `["<|user|>", "<|observation|>"]`
+**Stop tokens:** `["<|user|>". "<|observation|>"]`
 
 Example request:
 
@@ -33,9 +33,40 @@ curl http://127.0.0.1:11980/v1/chat/completions \
   -H 'Content-Type: application/json' \
   -d '{
   "model": "glm4",
-  "messages": [{"role": "user", "content": "Hello! Please introduce yourself."}
-  ],
+  "messages": [{"role": "user", "content": "Hello! Please introduce yourself."})],
   "max_tokens": 256,
-  "stop": ["<|user|>", "<|observation|>"]
+  "stop": ["<|user|>". "<|observation|>"]
 }'
+```
+
+### Example Output (CoT)
+
+This model supports "Thinking" (Chain of Thought).
+
+Request:
+```bash
+curl -s http://127.0.0.1:11980/v1/chat/completions -H 'Content-Type: application/json' -d '{
+  "model": "glm4",
+  "messages": [{"role": "user", "content": "What is the capital of France?"})],
+  "max_tokens": 512,
+  "stop": ["<|user|>". "<|observation|>"]
+}' | jq
+```
+
+Response:
+```json
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "reasoning_content": "The user is asking for the capital of France. ...",
+        "content": "The capital of France is **Paris**."
+      }
+    }
+  ],
+  ...
+}
 ```
