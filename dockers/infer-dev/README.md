@@ -119,24 +119,27 @@ Verify:
 ```bash
 curl http://127.0.0.1:11980/v1/models
 curl http://127.0.0.1:11980/v1/chat/completions -H 'Content-Type: application/json' -d 
-'{'
+{
   "model": "glm4",
   "messages": [{"role": "user", "content": "Hello"}],
   "max_tokens": 64
-}'
+}
 ```
 
 ## Integrating with Claude Code
 
-To use `llama-server` (OpenAI format) with **Claude Code** (Anthropic format), you need to bridge the protocols using **LiteLLM** and a telemetry proxy.
+To use `llama-server` (OpenAI format) with **Claude Code** (Anthropic format), you need to bridge the protocols using **LiteLLM** and a local telemetry proxy (to mock the missing `/api/event_logging/batch` endpoint).
 
 ### Prerequisites
-- **LiteLLM** installed (`pixi add --pypi litellm` or `pip install litellm`).
-- **Claude Code** installed (`npm install -g @anthropic-ai/claude-code`).
+- **LiteLLM** installed: `pixi add --pypi litellm` (or `pip install litellm`).
+- **Claude Code** installed: `npm install -g @anthropic-ai/claude-code`.
+- **Requests** (for the proxy script): `pixi add --pypi requests`.
 
-### Setup
+### Configuration & Setup
 
-1.  **Configure LiteLLM**: Create a `litellm_config.yaml` mapping Claude models to your local model.
+1.  **LiteLLM Configuration** (`litellm_config.yaml`):
+    Map the specific models requested by Claude Code (e.g., `claude-3-5-sonnet-...`) to your local model alias (e.g., `openai/glm4`).
+
     ```yaml
     model_list:
       - model_name: claude-3-5-sonnet-20240620
@@ -144,21 +147,96 @@ To use `llama-server` (OpenAI format) with **Claude Code** (Anthropic format), y
           model: openai/glm4
           api_base: http://127.0.0.1:11980/v1
           api_key: dummy
-      # Add other aliases (sonnet, claude-3-5-sonnet-latest, etc.)
+      - model_name: claude-3-5-sonnet-20241022
+        litellm_params:
+          model: openai/glm4
+          api_base: http://127.0.0.1:11980/v1
+          api_key: dummy
+      - model_name: claude-haiku-4-5-20251001
+        litellm_params:
+          model: openai/glm4
+          api_base: http://127.0.0.1:11980/v1
+          api_key: dummy
+    general_settings:
+      master_key: sk-litellm-master
     ```
 
-2.  **Run the Bridge**: Use the scripts provided in `context/hints/howto-use-claude-code-with-local-models.md` to start LiteLLM and the Telemetry Proxy.
-    
-    A ready-to-use solution is available in `tmp/claude-solution/` (generated during verification).
+2.  **Telemetry Proxy Script** (`proxy.py`):
+    This script forwards API requests to LiteLLM but returns `200 OK` for the event logging endpoint to prevent Claude Code from hanging.
 
-3.  **Run Claude Code**:
-    ```bash
-    export ANTHROPIC_BASE_URL=http://127.0.0.1:11899  # Port of the Telemetry Proxy
-    export ANTHROPIC_API_KEY=sk-litellm-master
-    claude -p "Hello"
+    ```python
+    import http.server
+    import requests
+    import sys
+    import os
+
+    LITELLM_URL = os.environ.get("LITELLM_URL", "http://127.0.0.1:8000")
+    PORT = int(os.environ.get("PORT", 11899))
+
+    class RequestHandler(http.server.BaseHTTPRequestHandler):
+        def do_POST(self):
+            # Mock the logging endpoint
+            if self.path == "/api/event_logging/batch":
+                self.send_response(200)
+                self.end_headers()
+                return
+
+            # Forward everything else to LiteLLM
+            try:
+                content_length = int(self.headers.get('Content-Length', 0))
+                post_data = self.rfile.read(content_length)
+                headers = {k: v for k, v in self.headers.items() if k.lower() != 'host'}
+                
+                resp = requests.post(f"{LITELLM_URL}{self.path}", data=post_data, headers=headers, stream=True)
+                
+                self.send_response(resp.status_code)
+                for k, v in resp.headers.items():
+                    if k.lower() not in ['content-encoding', 'transfer-encoding', 'content-length']:
+                        self.send_header(k, v)
+                self.end_headers()
+                
+                for chunk in resp.iter_content(chunk_size=4096):
+                    self.wfile.write(chunk)
+            except Exception as e:
+                self.send_error(500, str(e))
+
+        def do_GET(self):
+            try:
+                resp = requests.get(f"{LITELLM_URL}{self.path}")
+                self.send_response(resp.status_code)
+                self.end_headers()
+                self.wfile.write(resp.content)
+            except Exception as e:
+                self.send_error(500, str(e))
+
+    print(f"Proxy running on port {PORT} -> LiteLLM {LITELLM_URL}")
+    http.server.HTTPServer(("", PORT), RequestHandler).serve_forever()
     ```
 
-See `context/hints/howto-use-claude-code-with-local-models.md` for detailed instructions and the proxy script code.
+### Running the Bridge
+
+Start LiteLLM on port 8000 and the Proxy on port 11899:
+
+```bash
+# Start LiteLLM
+litellm --config litellm_config.yaml --port 8000 &
+
+# Start Proxy
+export PORT=11899
+export LITELLM_URL="http://127.0.0.1:8000"
+python3 proxy.py &
+```
+
+### Running Claude Code
+
+Point `Claude Code` to the **Proxy** port (11899):
+
+```bash
+export ANTHROPIC_BASE_URL=http://127.0.0.1:11899
+export ANTHROPIC_API_KEY=sk-litellm-master
+
+claude -p "Hello from local model!"
+```
 
 ## Editing configuration (important)
 
