@@ -208,7 +208,7 @@ fi
 if [[ "$LLAMA_AUTO_SERVE" == "on" ]]; then
   log "Waiting for /v1/models..."
   if command -v curl >/dev/null 2>&1; then
-    for _ in $(seq 1 180); do
+    for _ in $(seq 1 600); do
       if curl -fsS "http://127.0.0.1:${HOST_PORT}/v1/models" >/dev/null 2>&1; then
         log "Ready: http://127.0.0.1:${HOST_PORT}"
         exit 0

@@ -1,0 +1,81 @@
+services:
+  stage-2:
+    image: base-ubuntu-24-04:stage-2
+    stdin_open: true
+    tty: true
+    command: /bin/bash
+    deploy:
+      resources:
+        reservations:
+          devices: []
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    build:
+      context: .
+      dockerfile: stage-2.Dockerfile
+      extra_hosts:
+      - host.docker.internal:host-gateway
+      args:
+        BASE_IMAGE: base-ubuntu-24-04:stage-1
+        WITH_ESSENTIAL_APPS: true
+        PEI_STAGE_HOST_DIR_2: ./installation/stage-2
+        PEI_STAGE_DIR_2: /pei-from-host/stage-2
+        PEI_PREFIX_APPS: app
+        PEI_PREFIX_DATA: data
+        PEI_PREFIX_WORKSPACE: workspace
+        PEI_PREFIX_VOLUME: volume
+        PEI_PREFIX_IMAGE: image
+        PEI_PATH_HARD: /hard
+        PEI_PATH_SOFT: /soft
+        PEI_HTTP_PROXY_2: http://host.docker.internal:7890
+        PEI_HTTPS_PROXY_2: http://host.docker.internal:7890
+        ENABLE_GLOBAL_PROXY: false
+        REMOVE_GLOBAL_PROXY_AFTER_BUILD: false
+    ports:
+    - '2223:22'
+    environment: {}
+    volumes: []
+  stage-1:
+    profiles:
+    - build-helper
+    image: base-ubuntu-24-04:stage-1
+    stdin_open: true
+    tty: true
+    command: /bin/bash
+    deploy:
+      resources:
+        reservations:
+          devices: []
+    environment: {}
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    build:
+      context: .
+      dockerfile: stage-1.Dockerfile
+      extra_hosts:
+      - host.docker.internal:host-gateway
+      args:
+        BASE_IMAGE: ubuntu:24.04
+        WITH_ESSENTIAL_APPS: true
+        WITH_SSH: true
+        SSH_USER_NAME: me
+        SSH_USER_PASSWORD: '123456'
+        SSH_USER_UID: ''
+        SSH_USER_GID: ''
+        SSH_PUBKEY_FILE: ''
+        SSH_PRIVKEY_FILE: ''
+        SSH_CONTAINER_PORT: 22
+        APT_SOURCE_FILE: ''
+        KEEP_APT_SOURCE_FILE: true
+        APT_USE_PROXY: false
+        APT_KEEP_PROXY: false
+        PEI_HTTP_PROXY_1: http://host.docker.internal:7890
+        PEI_HTTPS_PROXY_1: http://host.docker.internal:7890
+        ENABLE_GLOBAL_PROXY: false
+        REMOVE_GLOBAL_PROXY_AFTER_BUILD: false
+        PEI_STAGE_HOST_DIR_1: ./installation/stage-1
+        PEI_STAGE_DIR_1: /pei-from-host/stage-1
+        ROOT_PASSWORD: ''
+    ports:
+    - '2223:22'
+    volumes: []
