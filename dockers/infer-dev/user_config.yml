@@ -151,7 +151,7 @@ stage_2:
     glm_4_7_gguf:
       type: host
       dst_path: /llm-models/GLM-4.7-GGUF
-      host_path: /data1/huangzhe/llm-models/GLM-4.7-GGUF
+      host_path: /data2/huangzhe/llm-models/GLM-4.7-GGUF
       volume_name: null
 
   # custom scripts in stage-2, run after stage-1 custom scripts

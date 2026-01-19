@@ -244,6 +244,7 @@ packages:
   version: 0.1.0
   sha256: d99385d37df7f9da1aa2c14ae5ed9a44b777ee92940ec503db50e58efc69da1a
   requires_python: '>=3.11'
+  editable: true
 - pypi: https://files.pythonhosted.org/packages/02/10/5da547df7a391dcde17f59520a231527b8571e6f46fc8efb02ccb370ab12/docutils-0.22.4-py3-none-any.whl
   name: docutils
   version: 0.22.4
@@ -613,6 +614,7 @@ packages:
   - mkdocs-glightbox ; extra == 'docs'
   - pymdown-extensions ; extra == 'docs'
   requires_python: '>=3.11'
+  editable: true
 - pypi: https://files.pythonhosted.org/packages/b2/f2/889ad4b2408f72fe1a4f6a19491177b30ea7bf1a0fd5f17050ca08cfc882/propcache-0.4.1-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
   name: propcache
   version: 0.4.1

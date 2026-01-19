@@ -42,7 +42,7 @@ services:
       CUDA_HOME: /usr/local/cuda
     volumes:
     - .container/workspace:/hard/volume/workspace
-    - /data1/huangzhe/llm-models/GLM-4.7-GGUF:/llm-models/GLM-4.7-GGUF
+    - /data2/huangzhe/llm-models/GLM-4.7-GGUF:/llm-models/GLM-4.7-GGUF
   stage-1:
     profiles:
     - build-helper
