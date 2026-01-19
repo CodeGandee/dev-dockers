@@ -118,12 +118,47 @@ Verify:
 
 ```bash
 curl http://127.0.0.1:11980/v1/models
-curl http://127.0.0.1:11980/v1/chat/completions -H 'Content-Type: application/json' -d '{
+curl http://127.0.0.1:11980/v1/chat/completions -H 'Content-Type: application/json' -d 
+'{'
   "model": "glm4",
   "messages": [{"role": "user", "content": "Hello"}],
   "max_tokens": 64
 }'
 ```
+
+## Integrating with Claude Code
+
+To use `llama-server` (OpenAI format) with **Claude Code** (Anthropic format), you need to bridge the protocols using **LiteLLM** and a telemetry proxy.
+
+### Prerequisites
+- **LiteLLM** installed (`pixi add --pypi litellm` or `pip install litellm`).
+- **Claude Code** installed (`npm install -g @anthropic-ai/claude-code`).
+
+### Setup
+
+1.  **Configure LiteLLM**: Create a `litellm_config.yaml` mapping Claude models to your local model.
+    ```yaml
+    model_list:
+      - model_name: claude-3-5-sonnet-20240620
+        litellm_params:
+          model: openai/glm4
+          api_base: http://127.0.0.1:11980/v1
+          api_key: dummy
+      # Add other aliases (sonnet, claude-3-5-sonnet-latest, etc.)
+    ```
+
+2.  **Run the Bridge**: Use the scripts provided in `context/hints/howto-use-claude-code-with-local-models.md` to start LiteLLM and the Telemetry Proxy.
+    
+    A ready-to-use solution is available in `tmp/claude-solution/` (generated during verification).
+
+3.  **Run Claude Code**:
+    ```bash
+    export ANTHROPIC_BASE_URL=http://127.0.0.1:11899  # Port of the Telemetry Proxy
+    export ANTHROPIC_API_KEY=sk-litellm-master
+    claude -p "Hello"
+    ```
+
+See `context/hints/howto-use-claude-code-with-local-models.md` for detailed instructions and the proxy script code.
 
 ## Editing configuration (important)
 
