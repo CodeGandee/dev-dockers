@@ -38,6 +38,24 @@ except ImportError:
 def parse_toml(file_path):
     with open(file_path, "rb") as f:
         data = tomllib.load(f)
+
+    # Apply overrides from environment variable AUTO_INFER_LLAMA_CPP_OVERRIDES (JSON string)
+    overrides_json = os.environ.get("AUTO_INFER_LLAMA_CPP_OVERRIDES")
+    if overrides_json:
+        try:
+            overrides = json.loads(overrides_json)
+            
+            def deep_merge(target, source):
+                for k, v in source.items():
+                    if isinstance(v, dict) and k in target and isinstance(target[k], dict):
+                        deep_merge(target[k], v)
+                    else:
+                        target[k] = v
+            
+            deep_merge(data, overrides)
+            print(f"[check-and-run-llama-cpp] Applied overrides: {overrides_json}", file=sys.stderr)
+        except json.JSONDecodeError as e:
+            print(f"[check-and-run-llama-cpp] Failed to parse overrides JSON: {e}", file=sys.stderr)
     
     # 0. Check Master Config
     master_config = data.get("master", {})
