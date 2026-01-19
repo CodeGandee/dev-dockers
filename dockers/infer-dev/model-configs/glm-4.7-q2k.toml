@@ -17,7 +17,7 @@ host = "0.0.0.0"
 metrics = true
 # For GLM-4.7, llama.cpp/llama-server should use Jinja templates.
 jinja = true
-chat_template = "chatglm4"
+# chat_template = "chatglm4"
 # llama-server expects an explicit value: on|off|auto
 flash_attn = "on"
 # Try to fit unset args into device memory.
@@ -26,11 +26,10 @@ fit = "on"
 ctx_size = 16384
 temp = 1.0
 top_p = 0.95
-
 [instance.glm-4-7-q2k]
     [instance.glm-4-7-q2k.control]
-    # Use GPUs 0, 1, 2, 3
-    gpu_ids = "0,1,2,3"
+    # Use GPUs 0, 1, 2, 3, 4, 5, 6, 7
+    gpu_ids = "0,1,2,3,4,5,6,7"
     log_file = "/tmp/glm-4.7-q2k.log"
 
 [instance.glm-4-7-q2k.server]
