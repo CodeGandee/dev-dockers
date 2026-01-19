@@ -1,6 +1,6 @@
 [project]
 authors = [{name = "igamenovoer", email = "igamenovoer@xx.com"}]
-dependencies = []
+dependencies = ["requests>=2.32.5,<3"]
 name = "dev-dockers"
 requires-python = ">= 3.11"
 version = "0.1.0"
