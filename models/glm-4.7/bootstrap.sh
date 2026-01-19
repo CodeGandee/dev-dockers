@@ -16,7 +16,7 @@ require_cmd() {
 require_cmd ln
 
 SRC_LINK="${REF_DIR}/source-data"
-TARGET="/data1/huangzhe/llm-models/GLM-4.7-GGUF"
+TARGET="/data2/huangzhe/llm-models/GLM-4.7-GGUF"
 
 echo "Bootstrapping GLM-4.7 GGUF in ${REF_DIR} ..."
 

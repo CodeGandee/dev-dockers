@@ -10,7 +10,7 @@ Managed references:
   - `source-data`: Symlink to the local model directory.
 
 - `glm-4.7` – GLM-4.7 GGUF collection (Q2_K, Q4_K_M).
-  - Source: Local storage `/data1/huangzhe/llm-models/GLM-4.7-GGUF`
+  - Source: Local storage `/data2/huangzhe/llm-models/GLM-4.7-GGUF`
   - Local path: `models/glm-4.7`
   - `source-data`: Symlink to the local directory.
 
