@@ -3,8 +3,9 @@
 ## HEADER
 
 - **Purpose**: Add an opt-in mechanism to install a prebuilt `llama.cpp` binary bundle into `infer-dev` at container start, so serving can use a custom or downloaded build without rebuilding the image.
-- **Status**: Draft
+- **Status**: Done
 - **Date**: 2026-01-15
+- **Completed**: 2026-01-20
 - **Dependencies**:
   - `dockers/infer-dev/installation/stage-2/custom/infer-dev-entry.sh`
   - `dockers/infer-dev/installation/stage-2/custom/check-and-run-llama-cpp.sh`

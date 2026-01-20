@@ -2,6 +2,9 @@
 
 This guide explains how to configure `Claude Code` (the CLI tool) to use a local LLM (hosted by `llama.cpp` or similar) via `LiteLLM` as a bridge.
 
+> Note: In this repo, `dockers/infer-dev` can auto-start an in-container LiteLLM + telemetry proxy.
+> See `dockers/infer-dev/README.md` and `/soft/app/litellm/check-and-run-litellm.sh` inside the container.
+
 ## Overview
 
 `Claude Code` communicates with the Anthropic API. To use a local model, we need to:

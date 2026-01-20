@@ -2,8 +2,9 @@
 
 ## HEADER
 - **Purpose**: Improve the default runtime behavior of PeiDocker projects by preventing Stage 1 startup during `compose up` and adding shell convenience to `run-merged.sh`.
-- **Status**: Draft
+- **Status**: Done
 - **Date**: 2026-01-12
+- **Completed**: 2026-01-20
 - **Dependencies**: `src/pei_docker/templates/base-image-gen.yml`, `src/pei_docker/merge_build.py`
 - **Target**: PeiDocker Users and Developers
 

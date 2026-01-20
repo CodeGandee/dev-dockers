@@ -2,8 +2,9 @@
 
 ## HEADER
 - **Purpose**: Migrate Anthropic Claude Code and OpenAI Codex CLI installation from `npm` to `bun` in PeiDocker, while retaining `npm` for Node.js/NVM bootstrapping.
-- **Status**: Draft
+- **Status**: Done
 - **Date**: 2026-01-13
+- **Completed**: 2026-01-20
 - **Dependencies**: 
     - `extern/tracked/PeiDocker/src/pei_docker/project_files/installation/stage-2/system/claude-code/install-claude-code.sh`
     - `extern/tracked/PeiDocker/src/pei_docker/project_files/installation/stage-2/system/codex-cli/install-codex-cli.sh`

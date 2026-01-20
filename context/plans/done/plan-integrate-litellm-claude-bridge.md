@@ -2,8 +2,9 @@
 
 ## HEADER
 **Purpose**: Integrate `LiteLLM` and a telemetry proxy into the `infer-dev` Docker image to enable seamless support for `Claude Code` (Anthropic API) backed by local `llama.cpp` models.
-**Status**: Draft
+**Status**: Done
 **Date**: 2026-01-19
+**Completed**: 2026-01-20
 **Dependencies**: `dockers/infer-dev`, `llama.cpp` (installed in container), `uv` (installed in container).
 **Target**: DevOps engineers and users of `infer-dev`.
 
@@ -72,18 +73,18 @@ sequenceDiagram
 - **dockers/infer-dev/installation/stage-2/system/litellm/README.md**: Documentation.
 - **dockers/infer-dev/installation/stage-2/system/litellm/install-litellm.sh**: Installation script.
 - **dockers/infer-dev/installation/stage-2/system/litellm/proxy.py**: The telemetry proxy script.
-- **dockers/infer-dev/installation/stage-2/system/litellm/check-and-run-litellm.sh**: Launcher script.
+- **dockers/infer-dev/installation/stage-2/custom/check-and-run-litellm.sh**: Project launcher script.
 - **dockers/infer-dev/installation/stage-2/custom/infer-dev-entry.sh**: Update to call the new launcher.
 - **dockers/infer-dev/user_config.yml**: Update to include the new installation script.
 - **dockers/infer-dev/docker-compose.yml**: (Regenerated) Update ports/volumes if needed (expose 11899).
 
 ## 4. TODOs (Implementation Steps)
 
-- [ ] **Create Install Script**: `install-litellm.sh` to install `litellm` and `requests`.
-- [ ] **Create Proxy Script**: Save the `proxy.py` logic to `stage-2/system/litellm/proxy.py`.
-- [ ] **Create Launcher Script**: `check-and-run-litellm.sh` to handle config and process lifecycle.
-- [ ] **Update User Config**: Add `install-litellm.sh` to `on_build` in `user_config.yml`.
-- [ ] **Update Entrypoint**: Modify `infer-dev-entry.sh` to invoke `check-and-run-litellm.sh`.
-- [ ] **Regenerate Config**: Run `pei-docker-cli configure`.
-- [ ] **Rebuild Image**: Rebuild `infer-dev:stage-2`.
-- [ ] **Verify**: Test with `Claude Code` using the new auto-start feature.
+- [x] **Create Install Script**: `install-litellm.sh` to install `litellm[proxy]`.
+- [x] **Create Proxy Script**: Save the `proxy.py` logic to `stage-2/system/litellm/proxy.py`.
+- [x] **Create Launcher Script**: `check-and-run-litellm.sh` to handle config and process lifecycle.
+- [x] **Update User Config**: Add `install-litellm.sh` to `on_build` in `user_config.yml`.
+- [x] **Update Entrypoint**: Modify `infer-dev-entry.sh` to invoke `check-and-run-litellm.sh`.
+- [x] **Regenerate Config**: Run `pei-docker-cli configure`.
+- [x] **Rebuild Image**: Rebuild `infer-dev:stage-2`.
+- [x] **Verify**: Test with `Claude Code` using the new auto-start feature.

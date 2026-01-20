@@ -128,115 +128,40 @@ curl http://127.0.0.1:11980/v1/chat/completions -H 'Content-Type: application/js
 
 ## Integrating with Claude Code
 
-To use `llama-server` (OpenAI format) with **Claude Code** (Anthropic format), you need to bridge the protocols using **LiteLLM** and a local telemetry proxy (to mock the missing `/api/event_logging/batch` endpoint).
+Claude Code speaks the **Anthropic** API, while `llama-server` speaks **OpenAI** API.
+`infer-dev` can optionally start an in-container bridge:
 
-### Prerequisites
-- **LiteLLM** installed: `pixi add --pypi litellm` (or `pip install litellm`).
-- **Claude Code** installed: `npm install -g @anthropic-ai/claude-code`.
-- **Requests** (for the proxy script): `pixi add --pypi requests`.
+- **LiteLLM** (Anthropic → OpenAI translation) on `AUTO_INFER_LITELLM_PORT` (default: `8000`)
+- **Telemetry proxy** on `AUTO_INFER_LITELLM_PROXY_PORT` (default: `11899`) which stubs
+  `POST /api/event_logging/batch` to keep Claude Code happy
 
-### Configuration & Setup
+### Quick start (in-container bridge)
 
-1.  **LiteLLM Configuration** (`litellm_config.yaml`):
-    Map the specific models requested by Claude Code (e.g., `claude-3-5-sonnet-...`) to your local model alias (e.g., `openai/glm4`).
-
-    ```yaml
-    model_list:
-      - model_name: claude-3-5-sonnet-20240620
-        litellm_params:
-          model: openai/glm4
-          api_base: http://127.0.0.1:11980/v1
-          api_key: dummy
-      - model_name: claude-3-5-sonnet-20241022
-        litellm_params:
-          model: openai/glm4
-          api_base: http://127.0.0.1:11980/v1
-          api_key: dummy
-      - model_name: claude-haiku-4-5-20251001
-        litellm_params:
-          model: openai/glm4
-          api_base: http://127.0.0.1:11980/v1
-          api_key: dummy
-    general_settings:
-      master_key: sk-litellm-master
-    ```
-
-2.  **Telemetry Proxy Script** (`proxy.py`):
-    This script forwards API requests to LiteLLM but returns `200 OK` for the event logging endpoint to prevent Claude Code from hanging.
-
-    ```python
-    import http.server
-    import requests
-    import sys
-    import os
-
-    LITELLM_URL = os.environ.get("LITELLM_URL", "http://127.0.0.1:8000")
-    PORT = int(os.environ.get("PORT", 11899))
-
-    class RequestHandler(http.server.BaseHTTPRequestHandler):
-        def do_POST(self):
-            # Mock the logging endpoint
-            if self.path == "/api/event_logging/batch":
-                self.send_response(200)
-                self.end_headers()
-                return
-
-            # Forward everything else to LiteLLM
-            try:
-                content_length = int(self.headers.get('Content-Length', 0))
-                post_data = self.rfile.read(content_length)
-                headers = {k: v for k, v in self.headers.items() if k.lower() != 'host'}
-                
-                resp = requests.post(f"{LITELLM_URL}{self.path}", data=post_data, headers=headers, stream=True)
-                
-                self.send_response(resp.status_code)
-                for k, v in resp.headers.items():
-                    if k.lower() not in ['content-encoding', 'transfer-encoding', 'content-length']:
-                        self.send_header(k, v)
-                self.end_headers()
-                
-                for chunk in resp.iter_content(chunk_size=4096):
-                    self.wfile.write(chunk)
-            except Exception as e:
-                self.send_error(500, str(e))
-
-        def do_GET(self):
-            try:
-                resp = requests.get(f"{LITELLM_URL}{self.path}")
-                self.send_response(resp.status_code)
-                self.end_headers()
-                self.wfile.write(resp.content)
-            except Exception as e:
-                self.send_error(500, str(e))
-
-    print(f"Proxy running on port {PORT} -> LiteLLM {LITELLM_URL}")
-    http.server.HTTPServer(("", PORT), RequestHandler).serve_forever()
-    ```
-
-### Running the Bridge
-
-Start LiteLLM on port 8000 and the Proxy on port 11899:
+Start a container with both llama.cpp auto-serve and the LiteLLM bridge enabled:
 
 ```bash
-# Start LiteLLM
-litellm --config litellm_config.yaml --port 8000 &
-
-# Start Proxy
-export PORT=11899
-export LITELLM_URL="http://127.0.0.1:8000"
-python3 proxy.py &
+docker compose run -d --service-ports --name infer-glm \
+  -v "$PWD/dockers/infer-dev/model-configs:/model-configs:ro" \
+  -e AUTO_INFER_LLAMA_CPP_ON_BOOT=1 \
+  -e AUTO_INFER_LLAMA_CPP_CONFIG=/model-configs/glm-4.7-q2k.toml \
+  -e AUTO_INFER_LITELLM_ON_BOOT=1 \
+  stage-2 sleep infinity
 ```
 
-### Running Claude Code
-
-Point `Claude Code` to the **Proxy** port (11899):
+Then point Claude Code at the **proxy** endpoint (host-side):
 
 ```bash
 export ANTHROPIC_BASE_URL=http://127.0.0.1:11899
 export ANTHROPIC_API_KEY=sk-litellm-master
-
 claude -p "Hello from local model!"
 ```
+
+Notes:
+- The bridge launcher is `/soft/app/litellm/check-and-run-litellm.sh`.
+- If `AUTO_INFER_LITELLM_CONFIG` is unset (or missing), a default config is generated at
+  `/soft/app/litellm/config.yaml` mapping common `claude-*` model names to `openai/glm4`
+  via `http://127.0.0.1:8080/v1` (the in-container llama-server).
+- Logs: `/tmp/litellm.log` and `/tmp/litellm-proxy.log`.
 
 ## Editing configuration (important)
 

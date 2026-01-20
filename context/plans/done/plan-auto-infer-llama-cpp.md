@@ -3,8 +3,9 @@
 ## HEADER
 
 - **Purpose**: Implement an automatic launcher for `llama.cpp` server instances upon container startup using a hierarchical TOML configuration file.
-- **Status**: Draft
+- **Status**: Done
 - **Date**: 2026-01-14
+- **Completed**: 2026-01-20
 - **Dependencies**: 
   - `dockers/infer-dev/user_config.yml`
   - `dockers/infer-dev/container-scripts/`

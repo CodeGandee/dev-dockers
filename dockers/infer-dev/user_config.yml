@@ -113,6 +113,7 @@ stage_2:
   # see https://docs.docker.com/compose/networking/
   ports:
     - '11980:8080'
+    - '11899:11899'
 
   # device settings, will override the stage-1 device settings
   device:
@@ -160,6 +161,7 @@ stage_2:
     # scripts run during build
     on_build:
       - 'stage-2/system/pixi/install-pixi.bash --user me --conda-repo tuna --pypi-repo tuna'
+      - 'stage-2/system/litellm/install-litellm.sh --user me'
       - 'stage-2/system/nodejs/install-nvm-nodejs.sh --user me'
       - 'stage-2/system/bun/install-bun.sh --user me --npm-repo https://registry.npmmirror.com'
       - 'stage-2/system/claude-code/install-claude-code.sh --user me'

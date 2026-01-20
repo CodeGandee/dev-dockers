@@ -37,6 +37,7 @@ services:
         REMOVE_GLOBAL_PROXY_AFTER_BUILD: false
     ports:
     - '2222:22'
+    - 11899:11899
     - 11980:8080
     environment:
       CUDA_HOME: /usr/local/cuda

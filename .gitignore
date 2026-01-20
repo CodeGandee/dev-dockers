@@ -5,3 +5,7 @@
 .claude/
 .gemini/
 tmp/
+
+# python caches
+__pycache__/
+*.pyc
