@@ -155,6 +155,22 @@ This plan should make it cheap to iterate on the Pixi project and rebuild packs 
     - and pass `--use-cache` to `pixi-pack`.
   - The smoke-test workflow should run the builder twice and assert the second run hits cache (log-level check), to prevent regressions where we accidentally bypass caches.
 
+### 2.5 Proxy strategy (development downloads via host proxy)
+
+During development (online build/pack), we should use the host’s HTTP proxy to accelerate Pixi and pixi-pack downloads.
+
+- **Detect proxy envs**:
+  - Use standard env vars if present: `http_proxy`, `https_proxy`, and/or `HTTP_PROXY`, `HTTPS_PROXY`.
+- **Container-safe rewrite**:
+  - If the proxy is configured as `http://127.0.0.1:<port>` or `http://localhost:<port>` on the host, it will not be reachable from inside containers.
+  - Rewrite to `http://host.docker.internal:<port>` for any in-container steps (builder containers, infer-dev containers).
+- **Builder script behavior**:
+  - `build-vllm-bundle.sh` should:
+    - log the detected proxy values (redact credentials if present),
+    - pass the rewritten proxy env vars into any container it starts,
+    - and ensure `--add-host=host.docker.internal:host-gateway` is present so the proxy hostname resolves.
+  - This makes `pixi lock`, `pixi run verify`, and `pixi-pack` package fetching use the host proxy automatically.
+
 ## 3. Files to Modify or Add
 
 - **`dockers/infer-dev/host-scripts/build-vllm-bundle.sh`**: Build vLLM offline bundle (Pixi lock + verify + `pixi-pack`) and output `offline-bundle.tar` (contains `channel/`).
