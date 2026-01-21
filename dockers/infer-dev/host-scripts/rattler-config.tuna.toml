@@ -1,0 +1,6 @@
+# Rattler config (used by pixi-pack -c) with Tsinghua TUNA mirrors.
+
+[mirrors]
+"https://conda.anaconda.org/conda-forge" = [
+  "https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge/"
+]

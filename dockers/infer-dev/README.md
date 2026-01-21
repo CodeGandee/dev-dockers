@@ -21,6 +21,8 @@ It is generated/configured via **PeiDocker** and uses a 2-stage image:
   - Models are mounted via `stage_2.mount` (example: `/data1/huangzhe/llm-models/GLM-4.7-GGUF` → `/llm-models/GLM-4.7-GGUF`). Do **not** mount the entire host model tree.
 - **Port mapping**
   - Host `11980` → container `8080` (llama-server).
+  - Host `11981` → container `8000` (vLLM OpenAI server).
+  - Host `11899` → container `11899` (Claude telemetry proxy).
 - **Optional auto-launch llama.cpp server**:
   - Set `AUTO_INFER_LLAMA_CPP_ON_BOOT=1` (or `true`) to enable auto-start on container boot.
   - Set `AUTO_INFER_LLAMA_CPP_CONFIG` to a TOML file to define one or more `llama-server` instances.
@@ -126,12 +128,52 @@ curl http://127.0.0.1:11980/v1/chat/completions -H 'Content-Type: application/js
 }
 ```
 
+## vLLM inference (Pixi-Pack offline bundle)
+
+This workflow is opt-in and designed to be **offline at runtime**:
+- Build an offline bundle tar on the host (downloads once, cacheable).
+- Mount it into `infer-dev` (recommended: under the mounted workspace).
+- On container boot, extract + `pixi install --frozen` from the local `channel/`, then start vLLM.
+
+Helpers inside the container:
+- `/soft/app/vllm/install-vllm-offline.sh`
+- `/soft/app/vllm/check-and-run-vllm.sh`
+
+### 1) Build the offline bundle (host)
+
+Default output goes to the mounted workspace: `dockers/infer-dev/.container/workspace/vllm-offline-bundle.tar`.
+
+```bash
+./dockers/infer-dev/host-scripts/build-vllm-bundle.sh
+```
+
+### 2) Start vLLM on boot (container)
+
+Example config: `dockers/infer-dev/model-configs/vllm-qwen2-vl-7b.toml`.
+
+```bash
+docker compose run -d --service-ports --name infer-vllm \
+  -v "$PWD/dockers/infer-dev/model-configs:/model-configs:ro" \
+  -e AUTO_INFER_VLLM_BUNDLE_ON_BOOT=1 \
+  -e AUTO_INFER_VLLM_BUNDLE_PATH=/hard/volume/workspace/vllm-offline-bundle.tar \
+  -e AUTO_INFER_VLLM_ON_BOOT=1 \
+  -e AUTO_INFER_VLLM_CONFIG=/model-configs/vllm-qwen2-vl-7b.toml \
+  stage-2 sleep infinity
+```
+
+Verify (host-side):
+
+```bash
+curl http://127.0.0.1:11981/v1/models
+curl http://127.0.0.1:11981/v1/chat/completions -H 'Content-Type: application/json' -d '{"model":"qwen2-vl-7b","messages":[{"role":"user","content":"Hello"}],"max_tokens":64}'
+```
+
 ## Integrating with Claude Code
 
 Claude Code speaks the **Anthropic** API, while `llama-server` speaks **OpenAI** API.
 `infer-dev` can optionally start an in-container bridge:
 
-- **LiteLLM** (Anthropic → OpenAI translation) on `AUTO_INFER_LITELLM_PORT` (default: `8000`)
+- **LiteLLM** (Anthropic → OpenAI translation) on `AUTO_INFER_LITELLM_PORT` (default: `8010`)
 - **Telemetry proxy** on `AUTO_INFER_LITELLM_PROXY_PORT` (default: `11899`) which stubs
   `POST /api/event_logging/batch` to keep Claude Code happy
 
@@ -161,6 +203,9 @@ Notes:
 - If `AUTO_INFER_LITELLM_CONFIG` is unset (or missing), a default config is generated at
   `/soft/app/litellm/config.yaml` mapping common `claude-*` model names to `openai/glm4`
   via `http://127.0.0.1:8080/v1` (the in-container llama-server).
+- To bridge Claude Code to vLLM instead, set:
+  - `AUTO_INFER_LITELLM_BACKEND_BASE=http://127.0.0.1:8000/v1`
+  - `AUTO_INFER_LITELLM_BACKEND_MODEL=qwen2-vl-7b` (or your served model name)
 - Logs: `/tmp/litellm.log` and `/tmp/litellm-proxy.log`.
 
 ## Editing configuration (important)

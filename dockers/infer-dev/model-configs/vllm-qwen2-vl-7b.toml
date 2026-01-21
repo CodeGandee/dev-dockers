@@ -1,0 +1,22 @@
+[master]
+enable = true
+
+# Pixi project dir inside the container. This is where install-vllm-offline.sh
+# extracts the bundle and installs the Pixi environment.
+pixi_project_dir = "/hard/volume/workspace/vllm-pixi-offline"
+pixi_environment = "default"
+api_server_module = "vllm.entrypoints.openai.api_server"
+
+[instance.control]
+log_dir = "/tmp"
+background = true
+
+[instance.server]
+host = "0.0.0.0"
+
+[instance.qwen2_vl_7b.server]
+port = 8000
+model = "/llm-models/Qwen2-VL-7B-Instruct"
+served_model_name = "qwen2-vl-7b"
+trust_remote_code = true
+tensor_parallel_size = 1

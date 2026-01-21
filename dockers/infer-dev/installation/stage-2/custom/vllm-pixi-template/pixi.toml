@@ -1,0 +1,20 @@
+[workspace]
+name = "infer-dev-vllm"
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[system-requirements]
+# Required so Pixi can resolve CUDA-enabled packages that depend on the `__cuda` virtual package.
+cuda = "12"
+
+[dependencies]
+python = "3.12.*"
+# Keep CUDA deps aligned with the infer-dev base image (CUDA 12.6.x).
+cuda-version = "==12.6"
+# vLLM pinned to a CUDA 12.6 build (avoid auto-selecting newer CUDA variants).
+vllm = { version = "==0.8.3", build = "cuda_126*" }
+# Required by vLLM for some models (e.g. Qwen2-VL uses xFormers backend in vision module).
+xformers = { version = "==0.0.29.post1", build = "cuda_126*py312*" }
+
+[tasks]
+verify = "python -c \"import torch, vllm; print('torch', torch.__version__, 'cuda', torch.version.cuda); print('vllm', vllm.__version__)\""

@@ -39,11 +39,13 @@ services:
     - '2222:22'
     - 11899:11899
     - 11980:8080
+    - 11981:8000
     environment:
       CUDA_HOME: /usr/local/cuda
     volumes:
     - .container/workspace:/hard/volume/workspace
     - /data2/huangzhe/llm-models/GLM-4.7-GGUF:/llm-models/GLM-4.7-GGUF
+    - /data2/huangzhe/llm-models/Qwen2-VL-7B-Instruct:/llm-models/Qwen2-VL-7B-Instruct
   stage-1:
     profiles:
     - build-helper

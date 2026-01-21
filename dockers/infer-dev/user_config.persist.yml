@@ -113,6 +113,7 @@ stage_2:
   # see https://docs.docker.com/compose/networking/
   ports:
     - '11980:8080'
+    - '11981:8000'
     - '11899:11899'
 
   # device settings, will override the stage-1 device settings
@@ -153,6 +154,11 @@ stage_2:
       type: host
       dst_path: /llm-models/GLM-4.7-GGUF
       host_path: /data2/huangzhe/llm-models/GLM-4.7-GGUF
+      volume_name: null
+    qwen2_vl_7b_instruct:
+      type: host
+      dst_path: /llm-models/Qwen2-VL-7B-Instruct
+      host_path: /data2/huangzhe/llm-models/Qwen2-VL-7B-Instruct
       volume_name: null
 
   # custom scripts in stage-2, run after stage-1 custom scripts

@@ -2,8 +2,8 @@
 
 ## HEADER
 **Purpose**: Add an opt-in mechanism in `dockers/infer-dev` to (1) build and validate a vLLM environment using **Pixi** (conda-forge-first) and **Pixi Pack** (`pixi-pack`) and (2) start one or more vLLM OpenAI-compatible servers from a TOML config on container boot using an **offline bundle** (local `channel/` + `pixi install --frozen`).
-**Status**: Draft
-**Date**: 2026-01-20
+**Status**: In progress (core implementation complete; end-to-end query validation pending)
+**Date**: 2026-01-21
 **Dependencies**:
 - `dockers/infer-dev/installation/stage-2/custom/infer-dev-entry.sh`
 - `dockers/infer-dev/installation/stage-2/custom/check-and-run-llama-cpp.sh` (pattern for TOML -> multi-instance runner)
@@ -16,6 +16,48 @@
 **Target**: AI engineers using `dockers/infer-dev` for local inference (vLLM + Claude Code via LiteLLM).
 
 ---
+
+## CURRENT STATUS (2026-01-21)
+
+### What’s implemented
+- **Pixi template + lock** in-image at `dockers/infer-dev/installation/stage-2/custom/vllm-pixi-template/` (includes `[system-requirements] cuda = "12"` so Pixi can solve CUDA builds).
+- **Host-side offline bundle builder** at `dockers/infer-dev/host-scripts/build-vllm-bundle.sh`:
+  - uses Pixi lock + `pixi run verify`
+  - uses `pixi-pack` with retries
+  - supports `-c/--rattler-config` for mirrors (added `dockers/infer-dev/host-scripts/rattler-config.tuna.toml`)
+- **Container boot offline installer** at `dockers/infer-dev/installation/stage-2/custom/install-vllm-offline.sh`:
+  - fixes PATH so `pixi` is found when running as user `me`
+  - extracts bundle tar into a stable project dir (default `/hard/volume/workspace/vllm-pixi-offline`)
+  - patches `channels = ["./channel"]`
+  - re-locks (`pixi lock`) after patching channels so the lock references local `channel/...` paths
+  - installs with `pixi install --frozen` and verifies with `pixi run verify`
+- **TOML runner + entrypoint wiring**:
+  - `dockers/infer-dev/installation/stage-2/custom/check-and-run-vllm.sh`
+  - `dockers/infer-dev/installation/stage-2/custom/infer-dev-entry.sh` (adds `/soft/app/vllm/*` helpers + env-gated boot hooks)
+- **Ports/mounts/docs/config example**:
+  - vLLM host port exposed: host `11981` → container `8000`
+  - Qwen2-VL test model mount added: `/llm-models/Qwen2-VL-7B-Instruct`
+  - example config: `dockers/infer-dev/model-configs/vllm-qwen2-vl-7b.toml`
+
+### What has been validated
+- Offline bundle **build** works on host:
+  - `dockers/infer-dev/.container/workspace/vllm-offline-bundle.tar` created (≈3.6–3.7 GiB).
+- Container boot flow works up to starting the vLLM server process:
+  - `install-vllm-offline.sh` completes and `check-and-run-vllm.sh` launches the instance.
+
+### Known issues found during validation
+1. **`pixi-pack` intermittent download errors** (HTTP decode errors) when using official conda-forge URLs behind the host proxy.
+   - Workaround implemented: allow `pixi-pack -c dockers/infer-dev/host-scripts/rattler-config.tuna.toml` and add retry logic in the builder script.
+2. **Offline install initially hit the network** because `pixi.lock` still contained remote URLs even after patching `channels = ["./channel"]`.
+   - Fix implemented: run `pixi lock` after extracting and patching channels so the lock references local `channel/...` package paths.
+3. **Qwen2-VL server crash** after model load due to missing `xformers` (`ModuleNotFoundError: No module named 'xformers'`).
+   - Fix in progress: added `xformers` to the Pixi template and updated lock; bundle rebuild succeeded.
+   - Remaining: rebuild `infer-dev:stage-2`, restart container, and verify `curl /v1/models` and a chat completion succeeds.
+
+### Remaining to declare “done”
+- Rebuild `infer-dev:stage-2` and re-run the on-boot test using `dockers/infer-dev/model-configs/vllm-qwen2-vl-7b.toml`.
+- Confirm vLLM endpoint responds on host `http://127.0.0.1:11981/v1/models` and `.../v1/chat/completions`.
+- Save a short test report (logs + request/response JSON) under `tmp/<subdir>`.
 
 ## 1. Purpose and Outcome
 
@@ -51,11 +93,11 @@
 
 ### 2.1 High-level flow
 0. **Build & pack offline bundle (host-side / CI, online)**:
-   - In a Pixi project directory (proposed repo template path: `dockers/infer-dev/vllm-pixi/`):
+   - In a Pixi project directory (template lives in-image at `dockers/infer-dev/installation/stage-2/custom/vllm-pixi-template/`):
      - `pixi lock` to produce/refresh `pixi.lock`.
       - `pixi run` a small validation task (import `torch`, `vllm`, print versions; optional short server warmup).
      - Run `pixi-pack` to produce an offline bundle tar (recommended: use a shared cache via `--use-cache`):
-       - Verified CLI shape (pixi-pack 0.8.x): `pixi-pack -o <out.tar> --use-cache <dir> <project_dir_or_pixi.toml>`
+       - Verified CLI shape (pixi-pack 0.7.5): `pixi-pack -o <out.tar> --use-cache <dir> <project_dir_or_pixi.toml>`
        - The output is a tar archive containing:
          - `channel/` (with `linux-64/`, `noarch/`, `repodata.json`, and package artifacts),
          - `environment.yml`,
@@ -67,6 +109,7 @@
         - `pixi.toml` + `pixi.lock` (copied from the repo template),
         - `channel/` (from the bundle),
       - patch `pixi.toml` channels to `["./channel"]` (so Pixi never needs remote channels on boot),
+      - re-lock (`pixi lock`) so the lock references local `channel/...` packages,
       - run `pixi install --frozen --manifest-path <project_dir>`.
 2. **Expose helpers under `/soft/app/vllm/`**:
    - Provide convenience scripts:
@@ -177,8 +220,8 @@ During development (online build/pack), we should use the host’s HTTP proxy to
 - **`dockers/infer-dev/installation/stage-2/custom/install-vllm-offline.sh`**: Extract an offline bundle tar into a stable Pixi project dir, patch channels to local only, run `pixi install --frozen`, verify imports, write `.installed-from.json`.
 - **`dockers/infer-dev/installation/stage-2/custom/check-and-run-vllm.sh`**: Parse TOML and launch one/many vLLM servers via `pixi run --manifest-path ...` (per-instance GPU/log handling).
 - **`dockers/infer-dev/installation/stage-2/custom/infer-dev-entry.sh`**: Call vLLM installer and runner based on env vars; add `/soft/app/vllm/*` symlinks.
-- **`dockers/infer-dev/vllm-pixi/pixi.toml`**: Default Pixi project template (channels, Python, CUDA/PyTorch, vLLM deps, verify tasks).
-- **`dockers/infer-dev/vllm-pixi/pixi.lock`** (recommended): Lockfile used by `pixi-pack` to generate the runtime pack.
+- **`dockers/infer-dev/installation/stage-2/custom/vllm-pixi-template/pixi.toml`**: Default Pixi project template (channels, system requirements, CUDA/PyTorch, vLLM deps, verify tasks).
+- **`dockers/infer-dev/installation/stage-2/custom/vllm-pixi-template/pixi.lock`**: Lockfile used by `pixi-pack` to generate the runtime pack.
 - **`dockers/infer-dev/model-configs/vllm-*.toml`**: Example vLLM instance configs (at least one).
 - **`dockers/infer-dev/README.md`**: Document env vars, Pixi Pack runtime contract, ports, and example commands.
 - **`dockers/infer-dev/merged.env`**: Add `RUN_PORTS` entry for vLLM (and optional `HOST_PORT_VLLM` / `CONTAINER_PORT_VLLM` knobs if this repo’s infer-dev contract adopts them).

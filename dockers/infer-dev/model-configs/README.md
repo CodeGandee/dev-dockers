@@ -1,6 +1,8 @@
 # Model Configuration Guide
 
-This directory contains TOML configuration files used by the `infer-dev` container to automatically launch `llama-server` instances on startup.
+This directory contains TOML configuration files used by the `infer-dev` container to automatically launch:
+- `llama-server` (llama.cpp, OpenAI-compatible)
+- `vllm.entrypoints.openai.api_server` (vLLM, OpenAI-compatible)
 
 The configuration format allows defining global defaults and specific model instances, including hardware control (GPU visibility) and server arguments.
 
@@ -84,4 +86,15 @@ Define one or more instances. Each instance runs as a separate process.
 2.  Set the environment variable `AUTO_INFER_LLAMA_CPP_CONFIG` to the path of this file inside the container (e.g., `/model-configs/my-model.toml`).
 3.  Set `AUTO_INFER_LLAMA_CPP_ON_BOOT=1`.
 
-See `context/design/contract/def-llama-cpp-config-toml.md` for the full specification.
+### vLLM usage (Pixi-backed)
+
+1.  Create a vLLM `.toml` file in this directory (e.g., `vllm-qwen2-vl-7b.toml`).
+2.  Set `AUTO_INFER_VLLM_CONFIG=/model-configs/vllm-qwen2-vl-7b.toml`.
+3.  Set `AUTO_INFER_VLLM_ON_BOOT=1`.
+4.  If you are using a Pixi-Pack offline bundle, also set:
+    - `AUTO_INFER_VLLM_BUNDLE_ON_BOOT=1`
+    - `AUTO_INFER_VLLM_BUNDLE_PATH=/hard/volume/workspace/<bundle>.tar`
+
+See:
+- `context/design/contract/def-llama-cpp-config-toml.md` (llama.cpp runner)
+- `context/design/contract/def-vllm-config-toml.md` (vLLM runner)
