@@ -14,7 +14,7 @@ Outputs a tar archive containing:
 
 Options:
   --template-dir <dir>          Pixi project dir to pack
-                                (default: dockers/infer-dev/installation/stage-2/custom/vllm-pixi-template)
+                                (default: dockers/infer-dev/installation/stage-2/utilities/vllm-pixi-template)
   -o, --output-file <path>      Output tar file path
                                 (default: dockers/infer-dev/.container/workspace/vllm-offline-bundle.tar)
   -p, --platform <platform>     Platform to pack (default: linux-64)
@@ -44,7 +44,7 @@ redact_url() {
 SCRIPT_DIR="$(cd -- "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 INFER_DEV_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd -P)"
 
-TEMPLATE_DIR_DEFAULT="$INFER_DEV_DIR/installation/stage-2/custom/vllm-pixi-template"
+TEMPLATE_DIR_DEFAULT="$INFER_DEV_DIR/installation/stage-2/utilities/vllm-pixi-template"
 OUTPUT_FILE_DEFAULT="$INFER_DEV_DIR/.container/workspace/vllm-offline-bundle.tar"
 PLATFORM_DEFAULT="linux-64"
 ENVIRONMENT_DEFAULT="default"
@@ -106,10 +106,15 @@ if [[ ! -f "$TEMPLATE_DIR/pixi.toml" ]]; then
   echo "Error: pixi.toml not found under template dir: $TEMPLATE_DIR" >&2
   exit 1
 fi
+if [[ ! -f "$TEMPLATE_DIR/pixi.lock" ]]; then
+  echo "Error: pixi.lock not found under template dir: $TEMPLATE_DIR" >&2
+  exit 1
+fi
 
 mkdir -p "$(dirname "$OUTPUT_FILE")"
 mkdir -p "$RATTLER_CACHE_DIR"
 mkdir -p "$PIXI_PACK_CACHE_DIR"
+mkdir -p "$INFER_DEV_DIR/.container/workspace/.tmp"
 
 HTTP_PROXY_RAW="${http_proxy:-${HTTP_PROXY:-}}"
 HTTPS_PROXY_RAW="${https_proxy:-${HTTPS_PROXY:-}}"
@@ -133,12 +138,25 @@ fi
 
 export RATTLER_CACHE_DIR
 
+WORK_DIR="$(mktemp -d "$INFER_DEV_DIR/.container/workspace/.tmp/vllm-pixi-template.XXXXXX")"
+cleanup() {
+  rm -rf "$WORK_DIR" 2>/dev/null || true
+}
+trap cleanup EXIT
+
+cp -f "$TEMPLATE_DIR/pixi.toml" "$WORK_DIR/pixi.toml"
+cp -f "$TEMPLATE_DIR/pixi.lock" "$WORK_DIR/pixi.lock"
+
 echo "[build-vllm-bundle] pixi lock ..."
-pixi lock --manifest-path "$TEMPLATE_DIR"
+pixi lock --manifest-path "$WORK_DIR"
+if ! cmp -s "$WORK_DIR/pixi.lock" "$TEMPLATE_DIR/pixi.lock"; then
+  echo "[build-vllm-bundle] Updating template pixi.lock (keeps template dir free of .pixi/ binaries)..."
+  cp -f "$WORK_DIR/pixi.lock" "$TEMPLATE_DIR/pixi.lock"
+fi
 
 if [[ "$SKIP_VERIFY" -ne 1 ]]; then
   echo "[build-vllm-bundle] pixi run verify ..."
-  pixi run --manifest-path "$TEMPLATE_DIR" --frozen verify
+  pixi run --manifest-path "$WORK_DIR" --frozen verify
 fi
 
 echo "[build-vllm-bundle] pixi-pack ..."
@@ -146,7 +164,7 @@ PIXI_PACK_ARGS=( -p "$PLATFORM" -e "$ENVIRONMENT" --use-cache "$PIXI_PACK_CACHE_
 if [[ -n "$RATTLER_CONFIG" ]]; then
   PIXI_PACK_ARGS+=( -c "$RATTLER_CONFIG" )
 fi
-PIXI_PACK_ARGS+=( "$TEMPLATE_DIR" )
+PIXI_PACK_ARGS+=( "$WORK_DIR" )
 
 attempt=1
 while true; do

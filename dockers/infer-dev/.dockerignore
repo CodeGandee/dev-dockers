@@ -1,0 +1,18 @@
+.container/
+**/.container/
+
+# Pixi project environments/caches (should never be baked into the image)
+**/.pixi/
+**/.pixi/**
+
+# Common caches
+**/.cache/
+**/.cache/**
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/.pytest_cache/
+**/.pytest_cache/**
+**/.mypy_cache/
+**/.mypy_cache/**

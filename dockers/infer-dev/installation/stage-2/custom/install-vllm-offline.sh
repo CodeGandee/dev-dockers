@@ -73,7 +73,7 @@ fi
 VLLM_USER="${AUTO_INFER_VLLM_USER:-me}"
 PROJECT_DIR="${AUTO_INFER_VLLM_PIXI_PROJECT_DIR:-/hard/volume/workspace/vllm-pixi-offline}"
 ENVIRONMENT="${AUTO_INFER_VLLM_PIXI_ENVIRONMENT:-default}"
-TEMPLATE_DIR="${AUTO_INFER_VLLM_PIXI_TEMPLATE_DIR:-/pei-from-host/stage-2/custom/vllm-pixi-template}"
+TEMPLATE_DIR="${AUTO_INFER_VLLM_PIXI_TEMPLATE_DIR:-/pei-from-host/stage-2/utilities/vllm-pixi-template}"
 
 EXPECTED_SHA256="${AUTO_INFER_VLLM_BUNDLE_SHA256:-}"
 ACTUAL_SHA256=""

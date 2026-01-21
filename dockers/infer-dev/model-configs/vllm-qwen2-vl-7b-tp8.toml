@@ -1,0 +1,23 @@
+[master]
+enable = true
+pixi_project_dir = "/hard/volume/workspace/vllm-pixi-offline"
+pixi_environment = "default"
+api_server_module = "vllm.entrypoints.openai.api_server"
+
+[instance.control]
+log_dir = "/tmp"
+background = true
+
+[instance.server]
+host = "0.0.0.0"
+
+[instance.qwen2_vl_7b_tp8.server]
+port = 8000
+model = "/llm-models/Qwen2-VL-7B-Instruct"
+served_model_name = "qwen2-vl-7b"
+trust_remote_code = true
+# Use all 8 GPUs
+tensor_parallel_size = 8
+# With TP=8, memory pressure is low (model shards are small), so we can use default settings.
+gpu_memory_utilization = 0.90
+max_model_len = 32768
