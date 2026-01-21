@@ -116,10 +116,10 @@ sequenceDiagram
     Entry->>Runner: parse TOML + launch instances
     Runner->>S: pixi run python -m sglang.launch_server ...
   else
-    Entry-->>Dev: no auto serve; helpers available
+    Entry-->>Dev: no auto serve (helpers available)
   end
 
-  Dev->>Client: request http://127.0.0.1:<HOST_PORT_SGLANG>/v1/chat/completions
+  Dev->>Client: request http://127.0.0.1:11982/v1/chat/completions
   Client->>S: OpenAI-compatible API call
   S-->>Client: response
 ```
