@@ -9,6 +9,11 @@ Managed references:
   - Local path: `models/qwen3-0.6b`
   - `source-data`: Symlink to the local model directory.
 
+- `qwen2-vl-7b` – Qwen2-VL-7B-Instruct (vision-language).
+  - Source: Local storage `/data2/huangzhe/llm-models/Qwen2-VL-7B-Instruct`
+  - Local path: `models/qwen2-vl-7b`
+  - `source-data`: Symlink to the local directory.
+
 - `glm-4.7` – GLM-4.7 GGUF collection (Q2_K, Q4_K_M).
   - Source: Local storage `/data2/huangzhe/llm-models/GLM-4.7-GGUF`
   - Local path: `models/glm-4.7`
