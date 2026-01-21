@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "vLLM config TOML (as JSON)",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "master": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "enable": { "type": "boolean" },
+        "pixi_project_dir": { "type": "string" },
+        "pixi_environment": { "type": "string" },
+        "api_server_module": { "type": "string" }
+      }
+    },
+    "instance": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "control": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "log_dir": { "type": "string" },
+            "background": { "type": "boolean" }
+          }
+        },
+        "server": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    }
+  }
+}
