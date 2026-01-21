@@ -12,6 +12,11 @@ VLLM_OFFLINE_INSTALLER="$SCRIPT_DIR/install-vllm-offline.sh"
 LITELLM_HELPER="/pei-from-host/stage-2/custom/check-and-run-litellm.sh"
 LITELLM_PROXY="/pei-from-host/stage-2/system/litellm/proxy.py"
 
+# Ensure caches go to the mounted workspace (not image/home).
+# This is consistent with setting XDG_CACHE_HOME/RATTLER_CACHE_DIR in /etc/environment.
+mkdir -p /hard/volume/workspace/.cache/rattler/cache || true
+chmod -R 0777 /hard/volume/workspace/.cache || true
+
 GET_PKG_ON_BOOT="${AUTO_INFER_LLAMA_CPP_GET_PKG_ON_BOOT:-0}"
 case "${GET_PKG_ON_BOOT,,}" in
   1|true)

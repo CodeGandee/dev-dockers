@@ -23,6 +23,13 @@ echo "PEI_SOFT_APPS=$PEI_SOFT_APPS" >> /etc/environment
 echo "PEI_SOFT_DATA=$PEI_SOFT_DATA" >> /etc/environment
 echo "PEI_SOFT_WORKSPACE=$PEI_SOFT_WORKSPACE" >> /etc/environment
 
+# Default Pixi/Rattler cache to the mounted workspace to avoid filling the image/home filesystem.
+# Workspace is typically host-mounted at /hard/volume/workspace (PeiDocker soft link: /soft/workspace).
+WORKSPACE_HARD_PATH="${PEI_PATH_HARD}/${PEI_PREFIX_VOLUME}/${PEI_PREFIX_WORKSPACE}"
+XDG_CACHE_HOME_DEFAULT="${WORKSPACE_HARD_PATH}/.cache"
+echo "XDG_CACHE_HOME=${XDG_CACHE_HOME_DEFAULT}" >> /etc/environment
+echo "RATTLER_CACHE_DIR=${XDG_CACHE_HOME_DEFAULT}/rattler/cache" >> /etc/environment
+
 # if CUDA_VISIBLE_DEVICES exists and it not empty, add it to /etc/environment
 # FIXME: this is not working
 if [ -n "$CUDA_VISIBLE_DEVICES" ]; then
