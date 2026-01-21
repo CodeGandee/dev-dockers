@@ -2,7 +2,7 @@
 
 ## HEADER
 **Purpose**: Add an opt-in mechanism in `dockers/infer-dev` to (1) build and validate a vLLM environment using **Pixi** (conda-forge-first) and **Pixi Pack** (`pixi-pack`) and (2) start one or more vLLM OpenAI-compatible servers from a TOML config on container boot using an **offline bundle** (local `channel/` + `pixi install --frozen`).
-**Status**: In progress (core implementation complete; end-to-end query validation pending)
+**Status**: Done (core implementation complete and validated)
 **Date**: 2026-01-21
 **Dependencies**:
 - `dockers/infer-dev/installation/stage-2/custom/infer-dev-entry.sh`
@@ -44,6 +44,14 @@
   - `dockers/infer-dev/.container/workspace/vllm-offline-bundle.tar` created (≈3.6–3.7 GiB).
 - Container boot flow works up to starting the vLLM server process:
   - `install-vllm-offline.sh` completes and `check-and-run-vllm.sh` launches the instance.
+- **End-to-End Smoke Test** (2026-01-21):
+  - Verified offline install + vLLM startup with `vllm-qwen2-vl-7b.toml`.
+  - Required memory tuning for Qwen2-VL-7B on 24GB GPU (RTX 3090):
+    - `gpu_memory_utilization = 0.99` (to maximize available KV cache space).
+    - `max_model_len = 8192` (to reduce KV cache requirements).
+    - `enforce_eager = true` (to reduce compilation overhead/memory usage).
+  - Confirmed `curl /v1/models` returns model info.
+  - Confirmed `curl /v1/chat/completions` returns valid response ("2+2 is equal to 4.").
 
 ### Known issues found during validation
 1. **`pixi-pack` intermittent download errors** (HTTP decode errors) when using official conda-forge URLs behind the host proxy.
@@ -52,12 +60,12 @@
    - Fix implemented: run `pixi lock` after extracting and patching channels so the lock references local `channel/...` package paths.
 3. **Qwen2-VL server crash** after model load due to missing `xformers` (`ModuleNotFoundError: No module named 'xformers'`).
    - Fix in progress: added `xformers` to the Pixi template and updated lock; bundle rebuild succeeded.
-   - Remaining: rebuild `infer-dev:stage-2`, restart container, and verify `curl /v1/models` and a chat completion succeeds.
+   - Remaining: rebuild `infer-dev:stage-2`, restart container, and verify `curl /v1/models` and a chat completion succeeds. (Done 2026-01-21)
 
 ### Remaining to declare “done”
-- Rebuild `infer-dev:stage-2` and re-run the on-boot test using `dockers/infer-dev/model-configs/vllm-qwen2-vl-7b.toml`.
-- Confirm vLLM endpoint responds on host `http://127.0.0.1:11981/v1/models` and `.../v1/chat/completions`.
-- Save a short test report (logs + request/response JSON) under `tmp/<subdir>`.
+- (Done) Rebuild `infer-dev:stage-2` and re-run the on-boot test using `dockers/infer-dev/model-configs/vllm-qwen2-vl-7b.toml`.
+- (Done) Confirm vLLM endpoint responds on host `http://127.0.0.1:11981/v1/models` and `.../v1/chat/completions`.
+- (Done) Save a short test report (logs + request/response JSON) under `tmp/<subdir>`.
 
 ## 1. Purpose and Outcome
 
@@ -231,21 +239,21 @@ During development (online build/pack), we should use the host’s HTTP proxy to
 
 ## 4. TODOs (Implementation Steps)
 
-- [ ] **Define Pixi Pack contract** Decide:
+- [x] **Define Pixi Pack contract** Decide:
   - Pixi project template location (`dockers/infer-dev/vllm-pixi/`),
   - bundle output name/location (e.g. `vllm-offline-bundle.tar`),
   - runtime project directory default (e.g. `/hard/volume/workspace/vllm-pixi-offline`),
   - cache directory defaults (Pixi cache dir from `pixi info`, and `pixi-pack --use-cache`).
-- [ ] **Add Pixi project template** Add `dockers/infer-dev/vllm-pixi/pixi.toml` and (recommended) `dockers/infer-dev/vllm-pixi/pixi.lock`, with conda-forge-first deps and a `verify` task.
-- [ ] **Implement bundle builder (host/CI)** Add `dockers/infer-dev/host-scripts/build-vllm-bundle.sh`:
+- [x] **Add Pixi project template** Add `dockers/infer-dev/vllm-pixi/pixi.toml` and (recommended) `dockers/infer-dev/vllm-pixi/pixi.lock`, with conda-forge-first deps and a `verify` task.
+- [x] **Implement bundle builder (host/CI)** Add `dockers/infer-dev/host-scripts/build-vllm-bundle.sh`:
   - `pixi lock` (or validate lock is present),
   - `pixi run verify`,
   - `pixi-pack ... --use-cache <dir>` to avoid re-downloading packages during repeated pack builds.
-- [ ] **Add cache-aware test notes** In the docs for building packs, show recommended exports:
+- [x] **Add cache-aware test notes** In the docs for building packs, show recommended exports:
   - `export PIXI_HOME=/hard/volume/workspace/.pixi`
   - bind-mount `/hard/volume/workspace/.cache/rattler/cache` to `$HOME/.cache/rattler/cache` (or set cache env vars if we confirm them)
   - and pass `--pixi-pack-cache-dir /hard/volume/workspace/.cache/pixi-pack` to the builder.
-- [ ] **Implement offline installer (container boot)** Add `installation/stage-2/custom/install-vllm-offline.sh`:
+- [x] **Implement offline installer (container boot)** Add `installation/stage-2/custom/install-vllm-offline.sh`:
   - copy bundle into `/soft/app/cache/` (optional),
   - extract bundle tar to populate `channel/`,
   - ensure `pixi.toml` + `pixi.lock` exist in the project dir (copy from repo template on first run),
@@ -253,22 +261,22 @@ During development (online build/pack), we should use the host’s HTTP proxy to
   - run `pixi install --frozen --manifest-path <project_dir>`,
   - verify `pixi run --manifest-path <project_dir> python -c "import vllm"`,
   - write `.installed-from.json` for idempotency.
-- [ ] **Implement TOML runner (pixi-backed)** Add `installation/stage-2/custom/check-and-run-vllm.sh` to launch instances via `pixi run --manifest-path <project_dir> python -m vllm.entrypoints.openai.api_server ...`.
-- [ ] **Add env var interface** Document and enforce gating variables:
+- [x] **Implement TOML runner (pixi-backed)** Add `installation/stage-2/custom/check-and-run-vllm.sh` to launch instances via `pixi run --manifest-path <project_dir> python -m vllm.entrypoints.openai.api_server ...`.
+- [x] **Add env var interface** Document and enforce gating variables:
   - `AUTO_INFER_VLLM_BUNDLE_PATH` (path to offline bundle tar, inside container; typically a mounted file)
   - `AUTO_INFER_VLLM_BUNDLE_SHA256` (optional integrity check)
   - `AUTO_INFER_VLLM_PIXI_PROJECT_DIR` (where to extract/keep the offline project; default under `/hard/volume/workspace/`)
   - `AUTO_INFER_VLLM_BUNDLE_ON_BOOT`
   - `AUTO_INFER_VLLM_ON_BOOT`, `AUTO_INFER_VLLM_CONFIG`
   - Optional overrides: `AUTO_INFER_VLLM_OVERRIDES` (JSON deep-merge like llama.cpp runner)
-- [ ] **Wire into entrypoint** Update `installation/stage-2/custom/infer-dev-entry.sh` to optionally run runtime unpack before auto-serve and to create `/soft/app/vllm/*` helper symlinks.
-- [ ] **Expose ports for `docker run` / compose** Decide defaults (proposed: `11981:8000`), update `dockers/infer-dev/merged.env` (`RUN_PORTS`), and (if needed) regenerate `dockers/infer-dev/docker-compose.yml` from `user_config*.yml`.
-- [ ] **Add example configs** Create at least one `dockers/infer-dev/model-configs/vllm-*.toml` for a known model + GPU parallelism (Qwen2-VL-7B recommended for validation).
-- [ ] **Update docs** Update `dockers/infer-dev/README.md` with:
+- [x] **Wire into entrypoint** Update `installation/stage-2/custom/infer-dev-entry.sh` to optionally run runtime unpack before auto-serve and to create `/soft/app/vllm/*` helper symlinks.
+- [x] **Expose ports for `docker run` / compose** Decide defaults (proposed: `11981:8000`), update `dockers/infer-dev/merged.env` (`RUN_PORTS`), and (if needed) regenerate `dockers/infer-dev/docker-compose.yml` from `user_config*.yml`.
+- [x] **Add example configs** Create at least one `dockers/infer-dev/model-configs/vllm-*.toml` for a known model + GPU parallelism (Qwen2-VL-7B recommended for validation).
+- [x] **Update docs** Update `dockers/infer-dev/README.md` with:
   - build bundle + offline install example,
   - auto-serve example,
   - how to point LiteLLM bridge at vLLM (`AUTO_INFER_LITELLM_BACKEND_BASE=http://127.0.0.1:<vllm_port>/v1`).
-- [ ] **Smoke test** Validate end-to-end:
+- [x] **Smoke test** Validate end-to-end:
   - offline install on boot + auto-serve,
   - `curl /v1/models` and `/v1/chat/completions` against vLLM endpoint,
   - optional Claude Code via LiteLLM bridge.

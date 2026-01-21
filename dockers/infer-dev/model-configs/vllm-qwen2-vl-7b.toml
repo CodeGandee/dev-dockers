@@ -20,3 +20,11 @@ model = "/llm-models/Qwen2-VL-7B-Instruct"
 served_model_name = "qwen2-vl-7b"
 trust_remote_code = true
 tensor_parallel_size = 1
+
+# Qwen2-VL-7B is large (~15.5GB). On a 24GB GPU, we need aggressive memory tuning.
+# - gpu_memory_utilization=0.99 gives vLLM almost all memory (leaving ~240MB for system).
+# - enforce_eager=true disables CUDA graph capture (saving memory/overhead).
+# - max_model_len limits context window to reduce KV cache requirements.
+gpu_memory_utilization = 0.99
+enforce_eager = true
+max_model_len = 8192
