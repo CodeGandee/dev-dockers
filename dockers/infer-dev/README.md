@@ -8,7 +8,7 @@ It is generated/configured via **PeiDocker** and uses a 2-stage image:
 
 ## What it’s for
 
-- Experimenting with `llama.cpp` and `vLLM` inside a consistent CUDA environment.
+- Experimenting with `llama.cpp`, `vLLM`, and `SGLang` inside a consistent CUDA environment.
 - Keeping work persistent via host-mounted volumes for code/data/workspace and local model storage.
 - Optionally auto-starting one or more `llama-server` instances on container entry.
 
@@ -23,6 +23,7 @@ It is generated/configured via **PeiDocker** and uses a 2-stage image:
   - Host `11980` → container `8080` (llama-server).
   - Host `11981` → container `8000` (vLLM OpenAI server).
   - Host `11899` → container `11899` (Claude telemetry proxy).
+  - Host `11982` → container `30000` (SGLang OpenAI server).
 - **Optional auto-launch llama.cpp server**:
   - Set `AUTO_INFER_LLAMA_CPP_ON_BOOT=1` (or `true`) to enable auto-start on container boot.
   - Set `AUTO_INFER_LLAMA_CPP_CONFIG` to a TOML file to define one or more `llama-server` instances.
@@ -166,6 +167,53 @@ Verify (host-side):
 ```bash
 curl http://127.0.0.1:11981/v1/models
 curl http://127.0.0.1:11981/v1/chat/completions -H 'Content-Type: application/json' -d '{"model":"qwen2-vl-7b","messages":[{"role":"user","content":"Hello"}],"max_tokens":64}'
+```
+
+## SGLang inference (Pixi-Pack offline bundle)
+
+This workflow is opt-in and keeps the image lightweight (SGLang is installed at runtime from a bundle):
+- Build a Pixi-pack bundle on the host (downloads once, cacheable).
+- Mount it into `infer-dev` (recommended: under the mounted workspace).
+- On container boot, unpack the environment into the workspace, then start one or more SGLang servers from a TOML config.
+
+Helpers inside the container:
+- `/soft/app/sglang/install-sglang-offline.sh`
+- `/soft/app/sglang/check-and-run-sglang.sh`
+
+### 1) Build the offline bundle (host)
+
+Default output goes to the mounted workspace: `dockers/infer-dev/.container/workspace/sglang-offline-bundle.tar`.
+
+```bash
+./dockers/infer-dev/host-scripts/build-sglang-bundle.sh
+```
+
+For fully offline boot installs (no need for `pixi-unpack` in the container), build a self-extracting bundle:
+
+```bash
+./dockers/infer-dev/host-scripts/build-sglang-bundle.sh --create-executable \
+  -o dockers/infer-dev/.container/workspace/sglang-offline-bundle.sh
+```
+
+### 2) Start SGLang on boot (container)
+
+Example config: `dockers/infer-dev/model-configs/sglang-glm-4.7-tp8.toml`.
+
+```bash
+docker compose run -d --service-ports --name infer-sglang \
+  -v "$PWD/dockers/infer-dev/model-configs:/model-configs:ro" \
+  -e AUTO_INFER_SGLANG_BUNDLE_ON_BOOT=1 \
+  -e AUTO_INFER_SGLANG_BUNDLE_PATH=/hard/volume/workspace/sglang-offline-bundle.tar \
+  -e AUTO_INFER_SGLANG_ON_BOOT=1 \
+  -e AUTO_INFER_SGLANG_CONFIG=/model-configs/sglang-glm-4.7-tp8.toml \
+  stage-2 sleep infinity
+```
+
+Verify (host-side):
+
+```bash
+curl http://127.0.0.1:11982/v1/models
+curl http://127.0.0.1:11982/v1/chat/completions -H 'Content-Type: application/json' -d '{"model":"glm-4.7","messages":[{"role":"user","content":"Hello"}],"max_tokens":64}'
 ```
 
 ## Integrating with Claude Code

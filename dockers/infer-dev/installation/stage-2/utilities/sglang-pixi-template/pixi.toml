@@ -1,0 +1,36 @@
+[workspace]
+name = "infer-dev-sglang"
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[dependencies]
+python = "3.11.*"
+
+[pypi-options]
+index-url = "https://pypi.org/simple"
+# Needed because some dependencies (e.g. torchcodec) may exist on multiple indexes.
+# See: https://pixi.sh/latest/reference/pixi_manifest/#index-strategy
+index-strategy = "unsafe-best-match"
+extra-index-urls = [
+  # SGLang currently depends on modern torch builds; prefer CUDA-enabled torch wheels.
+  # See: https://docs.sglang.io/get_started/install.html (example uses cu129)
+  "https://download.pytorch.org/whl/cu129",
+
+  # Optional: FlashInfer wheels (jit-cache, etc) for the same CUDA version.
+  # See: https://docs.flashinfer.ai/installation.html
+  "https://flashinfer.ai/whl/cu129",
+]
+
+[pypi-dependencies]
+# SGLang + model deps.
+sglang = "==0.5.7"
+transformers = "*"
+
+# FlashInfer is optional but recommended by SGLang docs.
+# Note: flashinfer-python may compile/download kernels on first use.
+flashinfer-python = "*"
+flashinfer-cubin = "*"
+flashinfer-jit-cache = "*"
+
+[tasks]
+verify = "python -c \"import torch, sglang; print('torch', torch.__version__, 'cuda', torch.version.cuda, 'cuda_available', torch.cuda.is_available()); print('sglang', getattr(sglang, '__version__', 'unknown')); import transformers; print('transformers', transformers.__version__)\""

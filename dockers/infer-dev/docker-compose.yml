@@ -40,6 +40,7 @@ services:
     - 11899:11899
     - 11980:8080
     - 11981:8000
+    - 11982:30000
     environment:
       CUDA_HOME: /usr/local/cuda
     volumes:

@@ -3,6 +3,7 @@
 This directory contains TOML configuration files used by the `infer-dev` container to automatically launch:
 - `llama-server` (llama.cpp, OpenAI-compatible)
 - `vllm.entrypoints.openai.api_server` (vLLM, OpenAI-compatible)
+- `sglang.launch_server` (SGLang, OpenAI-compatible)
 
 The configuration format allows defining global defaults and specific model instances, including hardware control (GPU visibility) and server arguments.
 
@@ -98,3 +99,13 @@ Define one or more instances. Each instance runs as a separate process.
 See:
 - `context/design/contract/def-llama-cpp-config-toml.md` (llama.cpp runner)
 - `context/design/contract/def-vllm-config-toml.md` (vLLM runner)
+- `context/design/contract/def-sglang-config-toml.md` (SGLang runner)
+
+### SGLang usage (Pixi-pack bundle + env/ runner)
+
+1. Create an SGLang `.toml` file in this directory (e.g., `sglang-glm-4.7-tp8.toml`).
+2. Set `AUTO_INFER_SGLANG_CONFIG=/model-configs/sglang-glm-4.7-tp8.toml`.
+3. Set `AUTO_INFER_SGLANG_ON_BOOT=1`.
+4. If you are using a Pixi-pack bundle, also set:
+   - `AUTO_INFER_SGLANG_BUNDLE_ON_BOOT=1`
+   - `AUTO_INFER_SGLANG_BUNDLE_PATH=/hard/volume/workspace/<bundle>.tar` (or `.sh` when using `pixi-pack --create-executable`)

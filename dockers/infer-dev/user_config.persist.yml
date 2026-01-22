@@ -115,6 +115,7 @@ stage_2:
     - '11980:8080'
     - '11981:8000'
     - '11899:11899'
+    - '11982:30000'
 
   # device settings, will override the stage-1 device settings
   device:

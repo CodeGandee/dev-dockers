@@ -9,6 +9,9 @@ LLAMA_CPP_PKG_INSTALLER="$SCRIPT_DIR/install-llama-cpp-pkg.sh"
 VLLM_HELPER="$SCRIPT_DIR/check-and-run-vllm.sh"
 VLLM_OFFLINE_INSTALLER="$SCRIPT_DIR/install-vllm-offline.sh"
 
+SGLANG_HELPER="$SCRIPT_DIR/check-and-run-sglang.sh"
+SGLANG_OFFLINE_INSTALLER="$SCRIPT_DIR/install-sglang-offline.sh"
+
 LITELLM_HELPER="/pei-from-host/stage-2/custom/check-and-run-litellm.sh"
 LITELLM_PROXY="/pei-from-host/stage-2/system/litellm/proxy.py"
 
@@ -51,6 +54,15 @@ if [[ -f "$VLLM_HELPER" ]]; then
 fi
 if [[ -f "$VLLM_OFFLINE_INSTALLER" ]]; then
   ln -sf "$VLLM_OFFLINE_INSTALLER" /soft/app/vllm/install-vllm-offline.sh
+fi
+
+# Convenience: expose SGLang helpers under /soft/app.
+mkdir -p /soft/app/sglang
+if [[ -f "$SGLANG_HELPER" ]]; then
+  ln -sf "$SGLANG_HELPER" /soft/app/sglang/check-and-run-sglang.sh
+fi
+if [[ -f "$SGLANG_OFFLINE_INSTALLER" ]]; then
+  ln -sf "$SGLANG_OFFLINE_INSTALLER" /soft/app/sglang/install-sglang-offline.sh
 fi
 
 # Convenience: expose LiteLLM bridge helpers under /soft/app.
@@ -108,6 +120,39 @@ case "${VLLM_ON_BOOT,,}" in
     ;;
   *)
     echo "[infer-dev-entry] Warning: AUTO_INFER_VLLM_ON_BOOT='${AUTO_INFER_VLLM_ON_BOOT}' not understood; treating as false." >&2
+    ;;
+esac
+
+# Optional: install an offline SGLang bundle on container boot.
+SGLANG_BUNDLE_ON_BOOT="${AUTO_INFER_SGLANG_BUNDLE_ON_BOOT:-0}"
+case "${SGLANG_BUNDLE_ON_BOOT,,}" in
+  1|true)
+    if [[ -x "$SGLANG_OFFLINE_INSTALLER" ]]; then
+      "$SGLANG_OFFLINE_INSTALLER"
+    else
+      echo "[infer-dev-entry] Warning: installer not found or not executable: $SGLANG_OFFLINE_INSTALLER" >&2
+    fi
+    ;;
+  0|false|'')
+    ;;
+  *)
+    echo "[infer-dev-entry] Warning: AUTO_INFER_SGLANG_BUNDLE_ON_BOOT='${AUTO_INFER_SGLANG_BUNDLE_ON_BOOT}' not understood; treating as false." >&2
+    ;;
+esac
+
+# Auto-launch SGLang is gated by AUTO_INFER_SGLANG_ON_BOOT (default: off).
+# AUTO_INFER_SGLANG_CONFIG alone should NOT trigger auto serving.
+SGLANG_ON_BOOT="${AUTO_INFER_SGLANG_ON_BOOT:-0}"
+case "${SGLANG_ON_BOOT,,}" in
+  1|true)
+    if [[ -n "${AUTO_INFER_SGLANG_CONFIG:-}" ]]; then
+      "$SGLANG_HELPER"
+    fi
+    ;;
+  0|false|'')
+    ;;
+  *)
+    echo "[infer-dev-entry] Warning: AUTO_INFER_SGLANG_ON_BOOT='${AUTO_INFER_SGLANG_ON_BOOT}' not understood; treating as false." >&2
     ;;
 esac
 
