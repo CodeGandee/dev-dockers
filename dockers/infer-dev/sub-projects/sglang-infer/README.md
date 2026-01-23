@@ -193,4 +193,5 @@ Useful overrides:
 
 - `invalid choice: 'glm47'` → upgrade SGLang (too old).
 - `sgl-kernel` / ABI issues → ensure torch/torchvision/torchaudio are pinned to matching PyTorch CUDA-local versions (e.g. `2.9.1+cu126` / `0.24.1+cu126`).
+- `CRITICAL WARNING: PyTorch 2.9.1 & CuDNN Compatibility Issue` (SGLang check) → this Pixi project uses the PyTorch wheels, which pin `nvidia-cudnn-cu12==9.10.2.21` (so you can’t “just upgrade” it via normal dependency resolution). For local smoke tests, you can set `SGLANG_DISABLE_CUDNN_CHECK=1` to proceed, or change to a different stack that provides CuDNN 9.15+.
 - Multi‑GPU issues / timeouts → try increasing watchdog timeout (if supported by your SGLang version) and verify NCCL is healthy.

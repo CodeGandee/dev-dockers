@@ -19,6 +19,8 @@ STARTUP_TIMEOUT_SECS="${SGLANG_STARTUP_TIMEOUT_SECS:-900}"
 TP_SIZE_CU126="${SGLANG_TP_SIZE_CU126:-1}"
 TP_SIZE_CU128="${SGLANG_TP_SIZE_CU128:-1}"
 
+DEVICE="${SGLANG_DEVICE:-cuda}"
+
 RUN_MODE="${SGLANG_RUN_MODE:-both}" # one of: cu126 | cu128 | both
 
 if [[ ! -d "${MODEL_DIR}" ]]; then
@@ -47,6 +49,7 @@ smoke_one_env() {
 
   pixi run --environment "${env_name}" python -c "import torch; print('torch', torch.__version__, 'cuda', torch.version.cuda, 'cuda_available', torch.cuda.is_available())"
   pixi run --environment "${env_name}" python -c "import sglang; print('sglang', getattr(sglang, '__version__', 'unknown'))"
+  pixi run --environment "${env_name}" python -c "import torch; print('device_count', torch.cuda.device_count() if torch.cuda.is_available() else 0)"
 
   # Start server in background and capture logs.
   pixi run --environment "${env_name}" python -m sglang.launch_server \
@@ -54,6 +57,7 @@ smoke_one_env() {
     --served-model-name "${SERVED_MODEL_NAME}" \
     --enable-multimodal \
     --trust-remote-code \
+    --device "${DEVICE}" \
     --tensor-parallel-size "${tp_size}" \
     --host "${HOST}" \
     --port "${port}" \
