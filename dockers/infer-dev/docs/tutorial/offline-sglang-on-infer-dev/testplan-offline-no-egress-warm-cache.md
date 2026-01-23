@@ -101,7 +101,8 @@ STEP_FILE="$TEST_RUN_DIR/00-baseline.md"
   docker ps -a
   docker network ls
   docker volume ls
-  docker image ls infer-dev:stage-1 infer-dev:stage-2 || true
+  docker image ls infer-dev:stage-1 || true
+  docker image ls infer-dev:stage-2 || true
   echo '```'
 } > "$STEP_FILE"
 ```
@@ -125,7 +126,8 @@ docker compose --profile build-helper build stage-1
 docker compose build stage-2
 
 # Evidence (copy into the report):
-docker image ls infer-dev:stage-1 infer-dev:stage-2
+docker image ls infer-dev:stage-1
+docker image ls infer-dev:stage-2
 docker image inspect infer-dev:stage-1 infer-dev:stage-2 --format '{{.RepoTags}} {{.Id}} {{.Created}} {{.Size}}'
 ```
 
