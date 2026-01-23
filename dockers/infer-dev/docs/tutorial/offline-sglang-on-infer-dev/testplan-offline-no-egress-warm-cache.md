@@ -364,16 +364,40 @@ This repo maps:
 
 - host `11982` → container `30000`
 
+#### C4.1 Models endpoint returns valid JSON
+
 ```bash
-curl --noproxy '*' -fsS http://127.0.0.1:11982/v1/models
+curl --noproxy '*' -fsS --max-time 10 http://127.0.0.1:11982/v1/models \
+  | python3 - <<'PY'
+import json, sys
+data = json.load(sys.stdin)
+assert isinstance(data, dict)
+assert "data" in data, data.keys()
+assert isinstance(data["data"], list)
+print("ok: /v1/models returned", len(data["data"]), "model entries")
+PY
 ```
 
-Chat completion smoke test:
+#### C4.2 Chat completion returns a valid result (not just “server started”)
+
+This must return a JSON payload with `choices[0].message.content` (or equivalent) populated.
 
 ```bash
-curl --noproxy '*' -fsS http://127.0.0.1:11982/v1/chat/completions \
+curl --noproxy '*' -fsS --max-time 120 http://127.0.0.1:11982/v1/chat/completions \
   -H 'Content-Type: application/json' \
-  -d '{"model":"qwen2-vl-7b","messages":[{"role":"user","content":"Hello"}],"max_tokens":32}'
+  -d '{"model":"qwen2-vl-7b","messages":[{"role":"user","content":"Say hi and return a short answer."}],"max_tokens":32}' \
+  | python3 - <<'PY'
+import json, sys
+resp = json.load(sys.stdin)
+if "error" in resp:
+    raise SystemExit(f"error field present: {resp['error']}")
+choices = resp.get("choices")
+assert isinstance(choices, list) and len(choices) >= 1, resp.keys()
+msg = choices[0].get("message") or {}
+content = msg.get("content")
+assert content is not None and str(content).strip(), "empty content"
+print("ok: chat completion content:", str(content)[:200])
+PY
 ```
 
 ### C5) Check logs (if needed)
@@ -488,7 +512,30 @@ docker exec -it \
 Then verify:
 
 ```bash
-curl --noproxy '*' -fsS http://127.0.0.1:11982/v1/models
+curl --noproxy '*' -fsS --max-time 10 http://127.0.0.1:11982/v1/models \
+  | python3 - <<'PY'
+import json, sys
+data = json.load(sys.stdin)
+assert isinstance(data, dict)
+assert isinstance(data.get("data"), list)
+print("ok: /v1/models returned", len(data["data"]), "model entries")
+PY
+
+curl --noproxy '*' -fsS --max-time 120 http://127.0.0.1:11982/v1/chat/completions \
+  -H 'Content-Type: application/json' \
+  -d '{"model":"qwen2-vl-7b","messages":[{"role":"user","content":"Say hi and return a short answer."}],"max_tokens":32}' \
+  | python3 - <<'PY'
+import json, sys
+resp = json.load(sys.stdin)
+if "error" in resp:
+    raise SystemExit(f"error field present: {resp['error']}")
+choices = resp.get("choices")
+assert isinstance(choices, list) and len(choices) >= 1, resp.keys()
+msg = choices[0].get("message") or {}
+content = msg.get("content")
+assert content is not None and str(content).strip(), "empty content"
+print("ok: chat completion content:", str(content)[:200])
+PY
 ```
 
 ---
