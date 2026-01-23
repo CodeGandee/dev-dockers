@@ -26,8 +26,9 @@ Store evidence under `dockers/infer-dev/logs/tests/` so it can be reviewed (and 
 From repo root:
 
 ```bash
+export REPO_ROOT="$(git rev-parse --show-toplevel)"
 export TEST_RUN_ID="$(date +%Y%m%d-%H%M%S)-offline-sglang-no-egress"
-export TEST_RUN_DIR="dockers/infer-dev/logs/tests/${TEST_RUN_ID}"
+export TEST_RUN_DIR="${REPO_ROOT}/dockers/infer-dev/logs/tests/${TEST_RUN_ID}"
 mkdir -p "$TEST_RUN_DIR"
 
 export LEDGER_FILE="$TEST_RUN_DIR/RESOURCES.md"
@@ -128,6 +129,16 @@ docker image ls infer-dev:stage-1 infer-dev:stage-2
 docker image inspect infer-dev:stage-1 infer-dev:stage-2 --format '{{.RepoTags}} {{.Id}} {{.Created}} {{.Size}}'
 ```
 
+Update `RESOURCES.md` for the images you built/validated:
+
+- Type: `image`
+- Name: `infer-dev:stage-1`
+- Cleanup: `docker image rm -f infer-dev:stage-1` (only when you really want to delete it)
+
+- Type: `image`
+- Name: `infer-dev:stage-2`
+- Cleanup: `docker image rm -f infer-dev:stage-2` (only when you really want to delete it)
+
 ### A2) Prepare (warm) host cache for SGLang bundle build
 
 Create report: `02-build-sglang-bundle.md`
@@ -159,16 +170,59 @@ For this test, pick a model that you already have downloaded on the host, or dow
 
 Offline requirement: the model path must already exist **on the host** and be mounted into the container.
 
-Example (edit to your environment):
+For **this test plan**, use the repo’s model reference:
+
+- Host model reference: `models/qwen2-vl-7b/source-data`
+- Expected target model: **Qwen2-VL-7B-Instruct**
+
+Bootstrap the model reference (creates/refreshes the `source-data` symlink):
 
 ```bash
-export HOST_MODEL_DIR=/data2/huangzhe/llm-models/GLM-4.7-AWQ
+cd "$REPO_ROOT"
+bash models/qwen2-vl-7b/bootstrap.sh
+
+export HOST_MODEL_DIR="${REPO_ROOT}/models/qwen2-vl-7b/source-data"
 
 # Evidence:
-ls -la "$HOST_MODEL_DIR" | head -n 50
+ls -la "${REPO_ROOT}/models/qwen2-vl-7b" | sed -n '1,50p'
+ls -la "$HOST_MODEL_DIR" | sed -n '1,50p'
 ```
 
-If you need a smaller/faster model for repeated testing, prefer downloading a small text-only model and mount it similarly.
+If you need a smaller/faster model for repeated testing, prefer using a smaller text-only model and update the config in step A4 accordingly.
+
+### A4) Create a test-only SGLang TOML config for Qwen2-VL-7B
+
+Create report: `04-create-sglang-config.md`
+
+This plan uses a config stored inside the test run folder and mounted into the container.
+
+Create `${TEST_RUN_DIR}/sglang-qwen2-vl-7b.toml`:
+
+```bash
+cat > "${TEST_RUN_DIR}/sglang-qwen2-vl-7b.toml" <<'TOML'
+[master]
+enable = true
+project_dir = "/hard/volume/workspace/sglang-pixi-offline"
+
+[instance.control]
+log_dir = "/tmp"
+background = true
+gpu_ids = "0"
+
+[instance.server]
+host = "0.0.0.0"
+port = 30000
+trust_remote_code = true
+
+[instance.qwen2_vl_7b.server]
+model_path = "/llm-models/Qwen2-VL-7B-Instruct"
+served_model_name = "qwen2-vl-7b"
+tp_size = 1
+TOML
+
+# Evidence:
+sed -n '1,200p' "${TEST_RUN_DIR}/sglang-qwen2-vl-7b.toml"
+```
 
 ---
 
@@ -239,16 +293,18 @@ From `dockers/infer-dev/`:
 ```bash
 cd dockers/infer-dev
 
+docker rm -f infer-sglang-offline >/dev/null 2>&1 || true
+
 docker compose \
   -f docker-compose.yml \
   -f .container/workspace/docker-compose.offline.override.yml \
   run -d --service-ports --name infer-sglang-offline \
-  -v "$PWD/model-configs:/model-configs:ro" \
-  -v "${HOST_MODEL_DIR}:/llm-models/GLM-4.7:ro" \
+  -v "${TEST_RUN_DIR}:/test-run:ro" \
+  -v "${HOST_MODEL_DIR}:/llm-models/Qwen2-VL-7B-Instruct:ro" \
   -e AUTO_INFER_SGLANG_BUNDLE_ON_BOOT=1 \
   -e AUTO_INFER_SGLANG_BUNDLE_PATH=/hard/volume/workspace/sglang-offline-bundle.sh \
   -e AUTO_INFER_SGLANG_ON_BOOT=1 \
-  -e AUTO_INFER_SGLANG_CONFIG=/model-configs/sglang-glm-4.7-tp8.toml \
+  -e AUTO_INFER_SGLANG_CONFIG=/test-run/sglang-qwen2-vl-7b.toml \
   stage-2 sleep infinity
 
 # Evidence:
@@ -317,7 +373,7 @@ Chat completion smoke test:
 ```bash
 curl --noproxy '*' -fsS http://127.0.0.1:11982/v1/chat/completions \
   -H 'Content-Type: application/json' \
-  -d '{"model":"glm-4.7","messages":[{"role":"user","content":"Hello"}],"max_tokens":32}'
+  -d '{"model":"qwen2-vl-7b","messages":[{"role":"user","content":"Hello"}],"max_tokens":32}'
 ```
 
 ### C5) Check logs (if needed)
@@ -377,12 +433,14 @@ Create report: `40-offline-no-auto-start.md`
 ```bash
 cd dockers/infer-dev
 
+docker rm -f infer-dev-offline >/dev/null 2>&1 || true
+
 docker compose \
   -f docker-compose.yml \
   -f .container/workspace/docker-compose.offline.override.yml \
   run -d --service-ports --name infer-dev-offline \
-  -v "$PWD/model-configs:/model-configs:ro" \
-  -v "${HOST_MODEL_DIR}:/llm-models/GLM-4.7:ro" \
+  -v "${TEST_RUN_DIR}:/test-run:ro" \
+  -v "${HOST_MODEL_DIR}:/llm-models/Qwen2-VL-7B-Instruct:ro" \
   stage-2 sleep infinity
 
 # Evidence:
@@ -422,7 +480,7 @@ Create report: `43-offline-manual-serve.md`
 
 ```bash
 docker exec -it \
-  -e AUTO_INFER_SGLANG_CONFIG=/model-configs/sglang-glm-4.7-tp8.toml \
+  -e AUTO_INFER_SGLANG_CONFIG=/test-run/sglang-qwen2-vl-7b.toml \
   infer-dev-offline \
   /soft/app/sglang/check-and-run-sglang.sh
 ```
