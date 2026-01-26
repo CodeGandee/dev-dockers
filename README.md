@@ -20,15 +20,16 @@ Each directory contains relevant Dockerfiles, Docker Compose files, and related 
 # Keep durable edits in user_config.persist.yml, then copy to user_config.yml
 cp dockers/infer-dev/user_config.persist.yml dockers/infer-dev/user_config.yml
 
-# Regenerate docker-compose.yml / merged.* from user_config.yml
-pixi run pei-docker-cli configure -p dockers/infer-dev --with-merged
+# Regenerate generated artifacts under dockers/infer-dev/src/
+cd dockers/infer-dev
+./pei-configure.sh --with-merged
 ```
 
 ### 2) Build the images
 
 ```bash
-docker compose -f dockers/infer-dev/docker-compose.yml build stage-1
-docker compose -f dockers/infer-dev/docker-compose.yml build stage-2
+docker compose -f dockers/infer-dev/src/docker-compose.yml build stage-1
+docker compose -f dockers/infer-dev/src/docker-compose.yml build stage-2
 ```
 
 ### 3) Start llama-server via TOML (auto-launch hook)
@@ -41,12 +42,12 @@ The entry hook can auto-start `llama-server` instances, but it is **off by defau
 
 Example (GLM-4.7 Q2_K):
 - Config: `dockers/infer-dev/model-configs/glm-4.7-q2k.toml`
-- Host port `11980` → container port `8080` (see `dockers/infer-dev/docker-compose.yml`)
+- Host port `11980` → container port `8080` (see `dockers/infer-dev/src/docker-compose.yml`)
 
 Run with the env var set (publish service ports and mount the config directory into the container):
 
 ```bash
-docker compose -f dockers/infer-dev/docker-compose.yml run -d --service-ports --name infer-glm \
+docker compose -f dockers/infer-dev/src/docker-compose.yml run -d --service-ports --name infer-glm \
   -v "$PWD/dockers/infer-dev/model-configs:/model-configs:ro" \
   -e AUTO_INFER_LLAMA_CPP_ON_BOOT=1 \
   -e AUTO_INFER_LLAMA_CPP_CONFIG=/model-configs/glm-4.7-q2k.toml \

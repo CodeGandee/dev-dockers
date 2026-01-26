@@ -22,7 +22,7 @@ This tutorial shows an **offline-first** workflow:
 ### Repo requirements (online machine)
 
 - This repository checked out
-- `pei-docker-cli` available on PATH (used to regenerate `docker-compose.yml` from `user_config.yml`)
+- `pei-docker-cli` available on PATH (used to regenerate `src/docker-compose.yml` from `user_config.yml`)
 
 ---
 
@@ -41,23 +41,23 @@ cd dockers/infer-dev
 If you changed `user_config.yml` (ports, mounts, scripts), regenerate derived files:
 
 ```bash
-pei-docker-cli configure --with-merged
+./pei-configure.sh --with-merged
 ```
 
-This rewrites (among others) `dockers/infer-dev/docker-compose.yml`, `dockers/infer-dev/merged.env`, and build/run scripts.
+This rewrites (among others) `dockers/infer-dev/src/docker-compose.yml`, `dockers/infer-dev/src/merged.env`, and `dockers/infer-dev/src/build-merged.sh`.
 
 ### 1.3 Build stage-1 (base layer)
 
 Stage-2 uses `infer-dev:stage-1` as its base, so build stage-1 first:
 
 ```bash
-docker compose --profile build-helper build stage-1
+docker compose -f src/docker-compose.yml --profile build-helper build stage-1
 ```
 
 ### 1.4 Build stage-2 (dev/runtime layer)
 
 ```bash
-docker compose build stage-2
+docker compose -f src/docker-compose.yml build stage-2
 ```
 
 ### 1.5 Export images for offline transfer

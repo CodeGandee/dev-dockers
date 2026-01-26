@@ -39,6 +39,8 @@ It is generated/configured via **PeiDocker** and uses a 2-stage image:
 ## Quick start
 
 ```bash
+cd dockers/infer-dev
+export COMPOSE_FILE=src/docker-compose.yml
 docker compose build stage-2
 docker compose up -d
 ```
@@ -269,14 +271,14 @@ PeiDocker projects can be re-created/regenerated, and `user_config.yml` may be o
 After changing `user_config.yml` or anything under `dockers/infer-dev/installation/`, you must run:
 
 ```bash
-pei-docker-cli configure -p dockers/infer-dev
+./pei-configure.sh --with-merged
 ```
 
-Otherwise the generated artifacts (notably `dockers/infer-dev/docker-compose.yml`, and optionally `merged.*`) will be stale. See `dockers/infer-dev/PEI-DOCKER-USAGE-GUIDE.md` for details.
+Otherwise the generated artifacts (notably `dockers/infer-dev/src/docker-compose.yml`, and optionally `src/merged.*`) will be stale. See `dockers/infer-dev/src/PEI-DOCKER-USAGE-GUIDE.md` for details.
 
 To use the merged single-image workflow:
 ```bash
-./build-merged.sh
+./src/build-merged.sh
 ./run-merged.sh --shell
 ```
 

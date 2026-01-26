@@ -2,7 +2,11 @@
 set -euo pipefail
 PROJECT_DIR=$(cd "$(dirname "$0")" && pwd)
 set -a
-source "$PROJECT_DIR/merged.env"
+if [[ -f "$PROJECT_DIR/src/merged.env" ]]; then
+  source "$PROJECT_DIR/src/merged.env"
+else
+  source "$PROJECT_DIR/merged.env"
+fi
 set +a
 
 # Normalize boolean-like values to 1/0 (accepts 1/0/true/false; case-insensitive). Empty remains empty.

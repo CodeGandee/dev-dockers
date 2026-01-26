@@ -5,9 +5,9 @@ This project was generated/configured by PeiDocker.
 ## Project Structure
 
 *   `user_config.yml`: **Main configuration file.** Edit this to define your image, SSH users, scripts, etc.
-*   `docker-compose.yml`: Generated file.
+*   `src/docker-compose.yml`: Generated file.
     *   **Note**: You **CAN** modify this file manually to add advanced Docker features not supported by PeiDocker.
-    *   **Warning**: Running `pei-docker-cli configure` will **OVERWRITE** this file. If you make manual changes, ensure you back them up or be prepared to re-apply them after re-configuration.
+    *   **Warning**: Running `./pei-configure.sh` will **OVERWRITE** this file. If you make manual changes, ensure you back them up or be prepared to re-apply them after re-configuration.
 *   `installation/`: Directory copied into the container at `/pei-from-host`.
     *   `stage-1/`: System layer scripts (APT, SSH, Proxy).
     *   `stage-2/`: Application layer scripts (Pixi, Conda, Custom).
@@ -18,9 +18,9 @@ This project was generated/configured by PeiDocker.
 1.  Edit `user_config.yml`.
 2.  Run configuration command to regenerate artifacts:
     ```bash
-    pei-docker-cli configure
+    ./pei-configure.sh
     ```
-    *   Add `--with-merged` to generate standalone build scripts (`build-merged.sh`).
+    *   Add `--with-merged` to generate merged build artifacts under `src/` (e.g. `src/build-merged.sh`).
 
 ## How to Build and Run
 
@@ -28,15 +28,15 @@ This project was generated/configured by PeiDocker.
 
 *   **Build**:
     ```bash
-    docker compose build stage-2
+    docker compose -f src/docker-compose.yml build stage-2
     ```
 *   **Run**:
     ```bash
     # Starts stage-2 service by default (stage-1 is excluded)
-    docker compose up
+    docker compose -f src/docker-compose.yml up
     
     # Detached mode
-    docker compose up -d
+    docker compose -f src/docker-compose.yml up -d
     ```
 *   **SSH**:
     Connect to the port defined in `user_config.yml` (default host port: 2222).
@@ -48,10 +48,10 @@ This project was generated/configured by PeiDocker.
 
 Useful if you want a single `docker build` command or don't want to use Compose.
 
-1.  Ensure you ran `pei-docker-cli configure --with-merged`.
+1.  Ensure you ran `./pei-configure.sh --with-merged`.
 2.  **Build**:
     ```bash
-    ./build-merged.sh
+    ./src/build-merged.sh
     ```
 3.  **Run**:
     ```bash
@@ -69,7 +69,7 @@ Useful if you want a single `docker build` command or don't want to use Compose.
 
 ## Troubleshooting
 
-*   **Rebuild**: If you change `user_config.yml`, always run `pei-docker-cli configure` again.
+*   **Rebuild**: If you change `user_config.yml`, always run `./pei-configure.sh` again.
 *   **Stage 1 vs Stage 2**:
     *   `Stage 1`: Base system (Ubuntu + CUDA + SSH + APT). Changes here invalidate the whole cache.
     *   `Stage 2`: Application layer. Optimized for frequent changes.

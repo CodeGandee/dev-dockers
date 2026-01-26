@@ -118,12 +118,12 @@ Create report: `01-build-images.md`
 ```bash
 cd dockers/infer-dev
 
-# If you edited user_config.yml, regenerate docker-compose.yml / merged.env first:
-pei-docker-cli configure --with-merged
+# If you edited user_config.yml, regenerate `src/docker-compose.yml` / `src/merged.env` first:
+./pei-configure.sh --with-merged
 
 # Build from scratch
-docker compose --profile build-helper build stage-1
-docker compose build stage-2
+docker compose -f src/docker-compose.yml --profile build-helper build stage-1
+docker compose -f src/docker-compose.yml build stage-2
 
 # Evidence (copy into the report):
 docker image ls infer-dev:stage-1
@@ -298,7 +298,7 @@ cd dockers/infer-dev
 docker rm -f infer-sglang-offline >/dev/null 2>&1 || true
 
 docker compose \
-  -f docker-compose.yml \
+  -f src/docker-compose.yml \
   -f .container/workspace/docker-compose.offline.override.yml \
   run -d --service-ports --name infer-sglang-offline \
   -v "${TEST_RUN_DIR}:/test-run:ro" \
@@ -462,7 +462,7 @@ cd dockers/infer-dev
 docker rm -f infer-dev-offline >/dev/null 2>&1 || true
 
 docker compose \
-  -f docker-compose.yml \
+  -f src/docker-compose.yml \
   -f .container/workspace/docker-compose.offline.override.yml \
   run -d --service-ports --name infer-dev-offline \
   -v "${TEST_RUN_DIR}:/test-run:ro" \

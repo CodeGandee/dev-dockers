@@ -19,7 +19,7 @@
 - Example Docker workflow:
   - `cd dockers/vllm && cp env.example .env && docker-compose up -d`
   - `cd dockers/litellm && cp env.example .env && docker-compose up -d`
-  - `./dockers/infer-dev/build-merged.sh && ./dockers/infer-dev/run-merged.sh --shell`
+  - `./dockers/infer-dev/src/build-merged.sh && ./dockers/infer-dev/run-merged.sh --shell`
 
 ## Coding Style & Naming Conventions
 
@@ -32,4 +32,3 @@
 
 - Commits commonly use Conventional Commits (e.g., `feat: ...`) and imperative subjects (e.g., `Update ...`). Prefer `feat|fix|docs|chore:` with a short, scoped summary.
 - PRs should include: what environment(s) changed (`dockers/<env>`), any new/changed `.env` variables (update `env.example`), and reproduction/validation steps (commands to run). Never commit secrets (tokens, `.env`, private keys).
-

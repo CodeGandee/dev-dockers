@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 PROJECT_DIR=$(cd "$(dirname "$0")" && pwd)
+PROJECT_ROOT=$(cd "$PROJECT_DIR/.." && pwd)
 STAGE2_IMAGE_NAME='infer-dev:stage-2'
 FORWARD=()
 usage() {
@@ -89,7 +90,7 @@ if [[ ${#FORWARD[@]} -gt 0 ]]; then
 fi
 
 # Build context
-cmd+=( "$PROJECT_DIR" )
+cmd+=( "$PROJECT_ROOT" )
 
 printf '%q ' "${cmd[@]}"; echo
 "${cmd[@]}"

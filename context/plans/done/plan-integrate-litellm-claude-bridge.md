@@ -76,7 +76,7 @@ sequenceDiagram
 - **dockers/infer-dev/installation/stage-2/custom/check-and-run-litellm.sh**: Project launcher script.
 - **dockers/infer-dev/installation/stage-2/custom/infer-dev-entry.sh**: Update to call the new launcher.
 - **dockers/infer-dev/user_config.yml**: Update to include the new installation script.
-- **dockers/infer-dev/docker-compose.yml**: (Regenerated) Update ports/volumes if needed (expose 11899).
+- **dockers/infer-dev/src/docker-compose.yml**: (Regenerated) Update ports/volumes if needed (expose 11899).
 
 ## 4. TODOs (Implementation Steps)
 

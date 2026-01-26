@@ -1,3 +1,5 @@
+name: infer-dev
+
 services:
   stage-2:
     image: infer-dev:stage-2
@@ -15,7 +17,7 @@ services:
     extra_hosts:
     - host.docker.internal:host-gateway
     build:
-      context: .
+      context: ..
       dockerfile: stage-2.Dockerfile
       extra_hosts:
       - host.docker.internal:host-gateway
@@ -44,7 +46,7 @@ services:
     environment:
       CUDA_HOME: /usr/local/cuda
     volumes:
-    - .container/workspace:/hard/volume/workspace
+    - ../.container/workspace:/hard/volume/workspace
     - /data2/huangzhe/llm-models/GLM-4.7-GGUF:/llm-models/GLM-4.7-GGUF
     - /data2/huangzhe/llm-models/Qwen2-VL-7B-Instruct:/llm-models/Qwen2-VL-7B-Instruct
   stage-1:
@@ -67,7 +69,7 @@ services:
     extra_hosts:
     - host.docker.internal:host-gateway
     build:
-      context: .
+      context: ..
       dockerfile: stage-1.Dockerfile
       extra_hosts:
       - host.docker.internal:host-gateway

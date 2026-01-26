@@ -11,7 +11,7 @@
 - `context/hints/howto-move-pixi-environment-offline.md` (Pixi Pack offline workflow)
 - `dockers/infer-dev/model-configs/` (config examples)
 - `dockers/infer-dev/README.md` (usage docs)
-- `dockers/infer-dev/merged.env` + `dockers/infer-dev/run-merged.sh` (port exposure contract for `docker run`)
+- `dockers/infer-dev/src/merged.env` + `dockers/infer-dev/run-merged.sh` (port exposure contract for `docker run`)
 - `context/hints/howto-use-claude-code-with-local-models.md` (Claude bridge usage)
 **Target**: AI engineers using `dockers/infer-dev` for local inference (vLLM + Claude Code via LiteLLM).
 
@@ -232,7 +232,7 @@ During development (online build/pack), we should use the host’s HTTP proxy to
 - **`dockers/infer-dev/installation/stage-2/custom/vllm-pixi-template/pixi.lock`**: Lockfile used by `pixi-pack` to generate the runtime pack.
 - **`dockers/infer-dev/model-configs/vllm-*.toml`**: Example vLLM instance configs (at least one).
 - **`dockers/infer-dev/README.md`**: Document env vars, Pixi Pack runtime contract, ports, and example commands.
-- **`dockers/infer-dev/merged.env`**: Add `RUN_PORTS` entry for vLLM (and optional `HOST_PORT_VLLM` / `CONTAINER_PORT_VLLM` knobs if this repo’s infer-dev contract adopts them).
+- **`dockers/infer-dev/src/merged.env`**: Add `RUN_PORTS` entry for vLLM (and optional `HOST_PORT_VLLM` / `CONTAINER_PORT_VLLM` knobs if this repo’s infer-dev contract adopts them).
 - **`context/design/contract/def-vllm-config-toml.md`** (new): Document TOML schema and examples (mirrors llama.cpp contract style).
 - **`context/design/contract/vllm-config-toml.schema.json`** (new, optional): JSON schema for validation tooling.
 - **`tests/integration/test_infer_dev_vllm_runner.py`** (optional): Minimal integration test for TOML parsing logic (if we factor parsing into a Python helper).
@@ -270,7 +270,7 @@ During development (online build/pack), we should use the host’s HTTP proxy to
   - `AUTO_INFER_VLLM_ON_BOOT`, `AUTO_INFER_VLLM_CONFIG`
   - Optional overrides: `AUTO_INFER_VLLM_OVERRIDES` (JSON deep-merge like llama.cpp runner)
 - [x] **Wire into entrypoint** Update `installation/stage-2/custom/infer-dev-entry.sh` to optionally run runtime unpack before auto-serve and to create `/soft/app/vllm/*` helper symlinks.
-- [x] **Expose ports for `docker run` / compose** Decide defaults (proposed: `11981:8000`), update `dockers/infer-dev/merged.env` (`RUN_PORTS`), and (if needed) regenerate `dockers/infer-dev/docker-compose.yml` from `user_config*.yml`.
+- [x] **Expose ports for `docker run` / compose** Decide defaults (proposed: `11981:8000`), update `dockers/infer-dev/src/merged.env` (`RUN_PORTS`), and (if needed) regenerate `dockers/infer-dev/src/docker-compose.yml` from `user_config*.yml`.
 - [x] **Add example configs** Create at least one `dockers/infer-dev/model-configs/vllm-*.toml` for a known model + GPU parallelism (Qwen2-VL-7B recommended for validation).
 - [x] **Update docs** Update `dockers/infer-dev/README.md` with:
   - build bundle + offline install example,
