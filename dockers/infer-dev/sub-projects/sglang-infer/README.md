@@ -1,4 +1,4 @@
-# `sglang-infer` (Pixi) — GLM-4.7 inference with SGLang (cu126 + cu128, multi‑GPU)
+# `sglang-infer` (Pixi) — SGLang inference (cu128 default, multi‑GPU)
 
 This sub-project is a **Pixi-managed** environment for running **SGLang** to serve **GLM-4.7** with **tensor parallel (multi‑GPU)**.
 
@@ -11,14 +11,11 @@ Reference: `context/hints/howto-host-glm-4-7-with-sglang-on-cuda-12-6.md`.
   - You still need the NVIDIA **driver** (it provides `libcuda.so`).
 - Pixi installed on the machine where you’ll create/use the env
 
-## Environments (CUDA compatibility)
+## CUDA compatibility
 
-This project defines **two Pixi environments**:
+This project targets **cu128** (CUDA 12.8 PyTorch wheels) and uses a **single default Pixi environment**:
 
-- `default` (**cu126 / CUDA 12.6**) — for hosts whose NVIDIA driver supports CUDA 12.6.
-  - Uses: `sglang==0.5.7` (PyPI) + `torch==2.9.1+cu126` / `torchvision==0.24.1+cu126` / `torchaudio==2.9.1+cu126` (PyTorch CUDA index)
-- `cu128` (**cu128 / CUDA 12.8**) — for newer drivers (and current GLM‑4.7 workflows).
-  - Uses: `sglang==0.5.7` (PyPI) + `torch==2.9.1+cu128` / `torchvision==0.24.1+cu128` / `torchaudio==2.9.1+cu128` (PyTorch CUDA index)
+- `default` (**cu128 / CUDA 12.8**) — `sglang==0.5.7` + `torch==2.9.1+cu128` / `torchvision==0.24.1+cu128` / `torchaudio==2.9.1+cu128` (PyTorch CUDA index)
 
 ## 1) Enter the project directory
 
@@ -78,34 +75,17 @@ XDG_CACHE_HOME="$PWD/.pkg-cache/xdg" \
 pixi install
 ```
 
-## 2) Install the environments
-
-Install **cu126** (default environment):
+## 2) Install the environment
 
 ```bash
 pixi install
 ```
 
-Install **cu128**:
-
-```bash
-pixi install --environment cu128
-```
-
 ## 3) Sanity check (CUDA + versions)
-
-cu126 / default:
 
 ```bash
 pixi run python -c "import torch; print('torch', torch.__version__, 'cuda', torch.version.cuda, 'cuda_available', torch.cuda.is_available(), 'device_count', torch.cuda.device_count() if torch.cuda.is_available() else 0)"
 pixi run python -c "import sglang; print('sglang', getattr(sglang, '__version__', 'unknown'))"
-```
-
-cu128:
-
-```bash
-pixi run --environment cu128 python -c "import torch; print('torch', torch.__version__, 'cuda', torch.version.cuda, 'cuda_available', torch.cuda.is_available(), 'device_count', torch.cuda.device_count() if torch.cuda.is_available() else 0)"
-pixi run --environment cu128 python -c "import sglang; print('sglang', getattr(sglang, '__version__', 'unknown'))"
 ```
 
 ## 4) Prepare GLM-4.7 model weights
@@ -142,7 +122,7 @@ Example: 8 GPUs (single node)
 ```bash
 export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
 
-pixi run --environment cu128 python -m sglang.launch_server \
+pixi run python -m sglang.launch_server \
   --model-path ./weights/GLM-4.7 \
   --served-model-name glm-4.7 \
   --tp-size 8 \
@@ -175,23 +155,22 @@ curl -fsS http://127.0.0.1:30000/v1/chat/completions \
   }'
 ```
 
-## Smoke test: `models/qwen2-vl-7b` (cu126 then cu128)
+## Smoke test: `models/qwen2-vl-7b` (cu128)
 
 This repo includes a simple start → query → stop smoke test script for Qwen2-VL-7B:
 
 ```bash
-bash dockers/infer-dev/sub-projects/sglang-infer/scripts/smoke-qwen2-vl-7b-cu126-then-cu128.sh
+bash dockers/infer-dev/sub-projects/sglang-infer/scripts/smoke-qwen2-vl-7b-cu128.sh
 ```
 
 Useful overrides:
 
 - `SGLANG_MODEL_DIR=/abs/path/to/model`
-- `SGLANG_TP_SIZE_CU126=1` / `SGLANG_TP_SIZE_CU128=1`
-- `SGLANG_RUN_MODE=cu126|cu128|both`
+- `SGLANG_TP_SIZE=1`
 
 ## Troubleshooting quick notes
 
 - `invalid choice: 'glm47'` → upgrade SGLang (too old).
-- `sgl-kernel` / ABI issues → ensure torch/torchvision/torchaudio are pinned to matching PyTorch CUDA-local versions (e.g. `2.9.1+cu126` / `0.24.1+cu126`).
+- `sgl-kernel` / ABI issues → ensure torch/torchvision/torchaudio are pinned to matching PyTorch CUDA-local versions (e.g. `2.9.1+cu128` / `0.24.1+cu128`).
 - `CRITICAL WARNING: PyTorch 2.9.1 & CuDNN Compatibility Issue` (SGLang check) → this Pixi project uses the PyTorch wheels, which pin `nvidia-cudnn-cu12==9.10.2.21` (so you can’t “just upgrade” it via normal dependency resolution). For local smoke tests, you can set `SGLANG_DISABLE_CUDNN_CHECK=1` to proceed, or change to a different stack that provides CuDNN 9.15+.
 - Multi‑GPU issues / timeouts → try increasing watchdog timeout (if supported by your SGLang version) and verify NCCL is healthy.

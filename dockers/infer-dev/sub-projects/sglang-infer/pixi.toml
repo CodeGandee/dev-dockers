@@ -13,22 +13,9 @@ cuda-runtime = "12.6.*"
 cuda-version = "==12.6"
 
 [environments]
-default = { features = ["cu126"] }
-cu128 = { features = ["cu128"] }
+default = { features = ["cu128"] }
 
 [tasks]
-
-[feature.cu126.pypi-options]
-# Use the PyTorch CUDA 12.6 index for torch/torchvision, and fall back to PyPI for everything else.
-index-url = "https://download.pytorch.org/whl/cu126"
-index-strategy = "unsafe-best-match"
-extra-index-urls = ["https://pypi.org/simple"]
-
-[feature.cu126.pypi-dependencies]
-torch = "==2.9.1+cu126"
-torchvision = "==0.24.1+cu126"
-torchaudio = "==2.9.1+cu126"
-sglang = "==0.5.7"
 
 [feature.cu128.pypi-options]
 # Use the PyTorch CUDA 12.8 index for torch/torchvision, and fall back to PyPI for everything else.
