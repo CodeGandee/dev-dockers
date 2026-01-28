@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
-PROJECT_DIR=$(cd "$(dirname "$0")" && pwd)
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+if [[ "$(basename "$SCRIPT_DIR")" == "src" ]]; then
+  PROJECT_DIR=$(cd "$SCRIPT_DIR/.." && pwd)
+else
+  PROJECT_DIR="$SCRIPT_DIR"
+fi
 set -a
 if [[ -f "$PROJECT_DIR/src/merged.env" ]]; then
   source "$PROJECT_DIR/src/merged.env"

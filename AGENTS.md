@@ -19,7 +19,7 @@
 - Example Docker workflow:
   - `cd dockers/vllm && cp env.example .env && docker-compose up -d`
   - `cd dockers/litellm && cp env.example .env && docker-compose up -d`
-  - `./dockers/infer-dev/src/build-merged.sh && ./dockers/infer-dev/run-merged.sh --shell`
+  - `./dockers/infer-dev/src/build-merged.sh && ./dockers/infer-dev/src/run-merged.sh --shell`
 
 ## Coding Style & Naming Conventions
 

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Defines the structure and behavior of the `.toml` configuration file used by `dockers/infer-dev/installation/stage-2/custom/check-and-run-sglang.sh` to launch one or more SGLang OpenAI-compatible servers (`python -m sglang.launch_server`).
+Defines the structure and behavior of the `.toml` configuration file used by `dockers/infer-dev/src/installation/stage-2/custom/check-and-run-sglang.sh` to launch one or more SGLang OpenAI-compatible servers (`python -m sglang.launch_server`).
 
 ## File Location
 
@@ -74,4 +74,3 @@ Notes:
 ## Example Configuration
 
 See `dockers/infer-dev/model-configs/sglang-*.toml`.
-

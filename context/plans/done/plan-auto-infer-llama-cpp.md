@@ -7,7 +7,7 @@
 - **Date**: 2026-01-14
 - **Completed**: 2026-01-20
 - **Dependencies**: 
-  - `dockers/infer-dev/user_config.yml`
+  - `dockers/infer-dev/src/user_config.yml`
   - `dockers/infer-dev/container-scripts/`
   - `context/design/contract/def-llama-cpp-config-toml.md`
 - **Target**: AI Engineers using `infer-dev` for model serving.
@@ -89,7 +89,7 @@ sequenceDiagram
 
 - **dockers/infer-dev/container-scripts/check-and-run-llama-cpp.sh**:
   - Main logic. Includes inline Python script.
-- **dockers/infer-dev/user_config.yml**:
+- **dockers/infer-dev/src/user_config.yml**:
   - Update `stage_2.custom.on_entry`.
 - **dockers/infer-dev/examples/llama_config.toml**:
   - Sample configuration.
@@ -100,6 +100,6 @@ sequenceDiagram
     - [ ] Implement env var check.
     - [ ] Write inline Python parser for hierarchical TOML with `master` section support.
     - [ ] Implement bash loop to launch processes from Python output using the correct executable path.
-- [ ] **Register Script**: Update `dockers/infer-dev/user_config.yml` (Already done).
+- [ ] **Register Script**: Update `dockers/infer-dev/src/user_config.yml` (Already done).
 - [ ] **Documentation**: Update `dockers/infer-dev/examples/llama_config.toml`.
 - [ ] **Verification**: Dry run/unit test the Python parser logic.

@@ -18,13 +18,13 @@ services:
     - host.docker.internal:host-gateway
     build:
       context: ..
-      dockerfile: stage-2.Dockerfile
+      dockerfile: src/stage-2.Dockerfile
       extra_hosts:
       - host.docker.internal:host-gateway
       args:
         BASE_IMAGE: infer-dev:stage-1
         WITH_ESSENTIAL_APPS: true
-        PEI_STAGE_HOST_DIR_2: ./installation/stage-2
+        PEI_STAGE_HOST_DIR_2: ./src/installation/stage-2
         PEI_STAGE_DIR_2: /pei-from-host/stage-2
         PEI_PREFIX_APPS: app
         PEI_PREFIX_DATA: data
@@ -70,7 +70,7 @@ services:
     - host.docker.internal:host-gateway
     build:
       context: ..
-      dockerfile: stage-1.Dockerfile
+      dockerfile: src/stage-1.Dockerfile
       extra_hosts:
       - host.docker.internal:host-gateway
       args:
@@ -92,7 +92,7 @@ services:
         PEI_HTTPS_PROXY_1: http://host.docker.internal:7890
         ENABLE_GLOBAL_PROXY: false
         REMOVE_GLOBAL_PROXY_AFTER_BUILD: false
-        PEI_STAGE_HOST_DIR_1: ./installation/stage-1
+        PEI_STAGE_HOST_DIR_1: ./src/installation/stage-1
         PEI_STAGE_DIR_1: /pei-from-host/stage-1
         ROOT_PASSWORD: ''
     ports:

@@ -14,7 +14,7 @@ Outputs a tar archive containing:
 
 Options:
   --template-dir <dir>          Pixi project dir to pack
-                                (default: dockers/infer-dev/installation/stage-2/utilities/vllm-pixi-template)
+                                (default: dockers/infer-dev/src/installation/stage-2/utilities/vllm-pixi-template)
   -o, --output-file <path>      Output tar file path
                                 (default: dockers/infer-dev/.container/workspace/vllm-offline-bundle.tar)
   -p, --platform <platform>     Platform to pack (default: linux-64)

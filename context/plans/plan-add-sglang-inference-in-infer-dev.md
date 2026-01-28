@@ -6,8 +6,8 @@
 - **Status**: Draft
 - **Date**: 2026-01-23
 - **Dependencies**:
-  - `dockers/infer-dev/installation/stage-2/custom/infer-dev-entry.sh` (boot hook wiring pattern)
-  - `dockers/infer-dev/installation/stage-2/system/pixi/install-pixi.bash` (Pixi availability in stage-2)
+  - `dockers/infer-dev/src/installation/stage-2/custom/infer-dev-entry.sh` (boot hook wiring pattern)
+  - `dockers/infer-dev/src/installation/stage-2/system/pixi/install-pixi.bash` (Pixi availability in stage-2)
   - `context/plans/done/plan-auto-install-llama-cpp-pkg-on-boot.md` (boot-time “install package then optionally serve” contract)
   - `context/plans/plan-add-vllm-package-auto-infer-infer-dev.md` (overall “runtime install + serve” design)
 - `dockers/infer-dev/sub-projects/sglang-infer/pixi.toml` (Pixi manifest that pins CUDA-specific PyTorch wheels)
@@ -156,12 +156,12 @@ sequenceDiagram
 
 ## 3. Files to Modify or Add
 
-- **`dockers/infer-dev/installation/stage-2/custom/sglang/sglang-env.sh`**: Normalizes `AUTO_INFER_WORKSPACE_DIR` / `AUTO_INFER_SGLANG_PROJECT_DIR` / `AUTO_INFER_SGLANG_CACHE_ROOT` and exports cache env vars derived from `AUTO_INFER_SGLANG_CACHE_ROOT`.
-- **`dockers/infer-dev/installation/stage-2/custom/sglang/copy-sglang-template-into-workspace.sh`**: Copies a runtime-provided template dir into `${AUTO_INFER_SGLANG_PROJECT_DIR}` (idempotent; refuses if missing).
-- **`dockers/infer-dev/installation/stage-2/custom/sglang/warm-sglang-cache.sh`**: Online-only helper that runs `pixi install --frozen` (both envs) to populate caches under the workspace.
-- **`dockers/infer-dev/installation/stage-2/custom/sglang/install-sglang-from-cache.sh`**: Offline installer that runs `pixi install --frozen` with cache env vars forced via `AUTO_INFER_SGLANG_CACHE_ROOT`.
-- **`dockers/infer-dev/installation/stage-2/custom/sglang/check-and-run-sglang.sh`**: Config-driven runner that launches SGLang servers and writes per-instance logs under the workspace.
-- **`dockers/infer-dev/installation/stage-2/custom/infer-dev-entry.sh`**: Wire `/soft/app/sglang/*` helpers and env-gated boot hooks.
+- **`dockers/infer-dev/src/installation/stage-2/custom/sglang/sglang-env.sh`**: Normalizes `AUTO_INFER_WORKSPACE_DIR` / `AUTO_INFER_SGLANG_PROJECT_DIR` / `AUTO_INFER_SGLANG_CACHE_ROOT` and exports cache env vars derived from `AUTO_INFER_SGLANG_CACHE_ROOT`.
+- **`dockers/infer-dev/src/installation/stage-2/custom/sglang/copy-sglang-template-into-workspace.sh`**: Copies a runtime-provided template dir into `${AUTO_INFER_SGLANG_PROJECT_DIR}` (idempotent; refuses if missing).
+- **`dockers/infer-dev/src/installation/stage-2/custom/sglang/warm-sglang-cache.sh`**: Online-only helper that runs `pixi install --frozen` (both envs) to populate caches under the workspace.
+- **`dockers/infer-dev/src/installation/stage-2/custom/sglang/install-sglang-from-cache.sh`**: Offline installer that runs `pixi install --frozen` with cache env vars forced via `AUTO_INFER_SGLANG_CACHE_ROOT`.
+- **`dockers/infer-dev/src/installation/stage-2/custom/sglang/check-and-run-sglang.sh`**: Config-driven runner that launches SGLang servers and writes per-instance logs under the workspace.
+- **`dockers/infer-dev/src/installation/stage-2/custom/infer-dev-entry.sh`**: Wire `/soft/app/sglang/*` helpers and env-gated boot hooks.
 - **`dockers/infer-dev/model-configs/sglang-*.toml`**: Example configs (e.g., `sglang-glm-4.7-tp8.toml`, `sglang-qwen2-vl-7b-tp2.toml`).
 - **`dockers/infer-dev/docker-compose.offline.yml`**: Override to set `network_mode: none` for strict no-egress validation.
 - **`dockers/infer-dev/docker-compose.sglang-template.yml`** (new): Compose override that mounts the downloaded template directory into the container at a stable path (chosen by the operator, and passed as `AUTO_INFER_SGLANG_TEMPLATE_DIR`).
@@ -178,28 +178,28 @@ sequenceDiagram
   - [ ] `AUTO_INFER_SGLANG_PROJECT_DIR=${AUTO_INFER_WORKSPACE_DIR}/sglang-infer` (optional)
   - [ ] `AUTO_INFER_SGLANG_CACHE_ROOT=${AUTO_INFER_WORKSPACE_DIR}/.cache/sglang-infer` (optional; supports separate cache mount)
   - [ ] `AUTO_INFER_SGLANG_PIXI_ENV=default` (optional; default `default` which is cu128 in this plan)
-- [ ] **Implement cache env contract** Add `dockers/infer-dev/installation/stage-2/custom/sglang/sglang-env.sh` and ensure all related scripts source it.
-- [ ] **Implement copy-template helper** Add `dockers/infer-dev/installation/stage-2/custom/sglang/copy-sglang-template-into-workspace.sh`:
+- [ ] **Implement cache env contract** Add `dockers/infer-dev/src/installation/stage-2/custom/sglang/sglang-env.sh` and ensure all related scripts source it.
+- [ ] **Implement copy-template helper** Add `dockers/infer-dev/src/installation/stage-2/custom/sglang/copy-sglang-template-into-workspace.sh`:
   - [ ] Fail-fast if `AUTO_INFER_SGLANG_TEMPLATE_DIR` is missing or does not contain `pixi.toml` + `pixi.lock`.
   - [ ] Copy into `AUTO_INFER_SGLANG_PROJECT_DIR` when missing or when `AUTO_INFER_SGLANG_FORCE_RECOPY=1`.
-- [ ] **Implement warm-cache helper (online)** Add `dockers/infer-dev/installation/stage-2/custom/sglang/warm-sglang-cache.sh`:
+- [ ] **Implement warm-cache helper (online)** Add `dockers/infer-dev/src/installation/stage-2/custom/sglang/warm-sglang-cache.sh`:
   - [ ] Runs `copy-sglang-template-into-workspace.sh` first.
   - [ ] Writes all downloads into `${AUTO_INFER_SGLANG_CACHE_ROOT}` (must be a mounted/persistent path).
   - [ ] If proxy env vars are present in the container, pass them through to `pixi`/`uv` (`HTTP_PROXY`/`HTTPS_PROXY`/`ALL_PROXY`/`NO_PROXY`).
   - [ ] Run `pixi install --frozen` (default env).
   - [ ] Emit a short “cache manifest” file (e.g. lockfile hash + timestamps) under `${AUTO_INFER_SGLANG_CACHE_ROOT}/`.
-- [ ] **Implement install-from-cache helper (offline)** Add `dockers/infer-dev/installation/stage-2/custom/sglang/install-sglang-from-cache.sh`:
+- [ ] **Implement install-from-cache helper (offline)** Add `dockers/infer-dev/src/installation/stage-2/custom/sglang/install-sglang-from-cache.sh`:
   - [ ] Runs `copy-sglang-template-into-workspace.sh` first.
   - [ ] Refuse to run if caches are missing (fail-fast with a clear message).
   - [ ] Run `pixi install --frozen` (default env; cu128).
   - [ ] Run a minimal import check and print torch/sglang versions and `torch.cuda.is_available()`.
-- [ ] **Implement server runner (config-driven)** Add `dockers/infer-dev/installation/stage-2/custom/sglang/check-and-run-sglang.sh`:
+- [ ] **Implement server runner (config-driven)** Add `dockers/infer-dev/src/installation/stage-2/custom/sglang/check-and-run-sglang.sh`:
   - [ ] Accept config path via env var (e.g. `AUTO_INFER_SGLANG_CONFIG=${AUTO_INFER_WORKSPACE_DIR}/sglang-configs/sglang-qwen2-vl-7b-tp2.toml`).
   - [ ] Launch one or more servers; per server:
     - [ ] set `CUDA_VISIBLE_DEVICES` from config
     - [ ] write logs under `${AUTO_INFER_WORKSPACE_DIR}/logs/sglang/...`
     - [ ] verify readiness by polling `/v1/models`
-- [ ] **Wire boot hooks (opt-in)** Update `dockers/infer-dev/installation/stage-2/custom/infer-dev-entry.sh`:
+- [ ] **Wire boot hooks (opt-in)** Update `dockers/infer-dev/src/installation/stage-2/custom/infer-dev-entry.sh`:
   - [ ] `AUTO_INFER_SGLANG_CACHE_WARM_ON_BOOT=1` (optional; online only)
   - [ ] `AUTO_INFER_SGLANG_INSTALL_ON_BOOT=1` (offline-capable)
   - [ ] `AUTO_INFER_SGLANG_ON_BOOT=1` (starts server after install)

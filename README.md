@@ -18,7 +18,7 @@ Each directory contains relevant Dockerfiles, Docker Compose files, and related 
 
 ```bash
 # Keep durable edits in user_config.persist.yml, then copy to user_config.yml
-cp dockers/infer-dev/user_config.persist.yml dockers/infer-dev/user_config.yml
+cp dockers/infer-dev/src/user_config.persist.yml dockers/infer-dev/src/user_config.yml
 
 # Regenerate generated artifacts under dockers/infer-dev/src/
 cd dockers/infer-dev
@@ -66,5 +66,5 @@ curl http://127.0.0.1:11980/v1/chat/completions -H 'Content-Type: application/js
 ```
 
 Notes:
-- The sample config mounts a specific model directory to `/llm-models/...` (not the entire host model tree); adjust `dockers/infer-dev/user_config.persist.yml` + rerun `pei-docker-cli configure` to test other models.
+- The sample config mounts a specific model directory to `/llm-models/...` (not the entire host model tree); adjust `dockers/infer-dev/src/user_config.persist.yml` + rerun `./dockers/infer-dev/pei-configure.sh` to test other models.
 - `AUTO_INFER_LLAMA_CPP_PKG_PATH` + `AUTO_INFER_LLAMA_CPP_GET_PKG_ON_BOOT=1|true` installs a prebuilt llama.cpp bundle into `/soft/app/llama-cpp` on boot (archive is cached under `/soft/app/cache`). If auto-install is off, run `/soft/app/llama-cpp/get-llama-cpp-pkg.sh` inside the container.

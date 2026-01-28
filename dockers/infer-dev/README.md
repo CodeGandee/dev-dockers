@@ -92,7 +92,7 @@ sequenceDiagram
    - creates `/soft/*` links (e.g., `/soft/workspace` → `/hard/volume/workspace`)
    - runs any configured stage-1/stage-2 `on_first_run` / `on_every_run` hooks
    - starts `sshd`
-2. **Stage-2 custom entry** (`dockers/infer-dev/installation/stage-2/custom/infer-dev-entry.sh`) runs next:
+2. **Stage-2 custom entry** (`dockers/infer-dev/src/installation/stage-2/custom/infer-dev-entry.sh`) runs next:
    - always exposes helper scripts:
      - `/soft/app/llama-cpp/get-llama-cpp-pkg.sh` (manual llama.cpp bundle install)
      - `/soft/app/llama-cpp/check-and-run-llama-cpp.sh` (manual llama-server start)
@@ -262,13 +262,13 @@ Notes:
 
 PeiDocker projects can be re-created/regenerated, and `user_config.yml` may be overwritten during that process. To keep your changes durable:
 
-1. Edit `dockers/infer-dev/user_config.persist.yml`
+1. Edit `dockers/infer-dev/src/user_config.persist.yml`
 2. Copy it over the active config before running PeiDocker:
    ```bash
-   cp dockers/infer-dev/user_config.persist.yml dockers/infer-dev/user_config.yml
+   cp dockers/infer-dev/src/user_config.persist.yml dockers/infer-dev/src/user_config.yml
    ```
 
-After changing `user_config.yml` or anything under `dockers/infer-dev/installation/`, you must run:
+After changing `src/user_config.yml` or anything under `dockers/infer-dev/src/installation/`, you must run:
 
 ```bash
 ./pei-configure.sh --with-merged
@@ -279,7 +279,7 @@ Otherwise the generated artifacts (notably `dockers/infer-dev/src/docker-compose
 To use the merged single-image workflow:
 ```bash
 ./src/build-merged.sh
-./run-merged.sh --shell
+./src/run-merged.sh --shell
 ```
 
 Note: do not commit secrets (`.env`, tokens, private keys). Use `env.example`/config templates instead.

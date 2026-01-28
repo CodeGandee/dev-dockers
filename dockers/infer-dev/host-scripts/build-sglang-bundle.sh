@@ -15,7 +15,7 @@ Outputs an archive (or self-extracting script when --create-executable is set) c
 
 Options:
   --template-dir <dir>          Pixi project dir to pack
-                                (default: dockers/infer-dev/installation/stage-2/utilities/sglang-pixi-template)
+                                (default: dockers/infer-dev/src/installation/stage-2/utilities/sglang-pixi-template)
   -o, --output-file <path>      Output file path
                                 (default: dockers/infer-dev/.container/workspace/sglang-offline-bundle.tar)
   -p, --platform <platform>     Platform to pack (default: linux-64)

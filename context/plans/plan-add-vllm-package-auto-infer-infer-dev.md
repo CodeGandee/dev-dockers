@@ -5,13 +5,13 @@
 **Status**: Done (core implementation complete and validated)
 **Date**: 2026-01-21
 **Dependencies**:
-- `dockers/infer-dev/installation/stage-2/custom/infer-dev-entry.sh`
-- `dockers/infer-dev/installation/stage-2/custom/check-and-run-llama-cpp.sh` (pattern for TOML -> multi-instance runner)
-- `dockers/infer-dev/installation/stage-2/system/pixi/install-pixi.bash` (Pixi availability in stage-2)
+- `dockers/infer-dev/src/installation/stage-2/custom/infer-dev-entry.sh`
+- `dockers/infer-dev/src/installation/stage-2/custom/check-and-run-llama-cpp.sh` (pattern for TOML -> multi-instance runner)
+- `dockers/infer-dev/src/installation/stage-2/system/pixi/install-pixi.bash` (Pixi availability in stage-2)
 - `context/hints/howto-move-pixi-environment-offline.md` (Pixi Pack offline workflow)
 - `dockers/infer-dev/model-configs/` (config examples)
 - `dockers/infer-dev/README.md` (usage docs)
-- `dockers/infer-dev/src/merged.env` + `dockers/infer-dev/run-merged.sh` (port exposure contract for `docker run`)
+- `dockers/infer-dev/src/merged.env` + `dockers/infer-dev/src/run-merged.sh` (port exposure contract for `docker run`)
 - `context/hints/howto-use-claude-code-with-local-models.md` (Claude bridge usage)
 **Target**: AI engineers using `dockers/infer-dev` for local inference (vLLM + Claude Code via LiteLLM).
 
@@ -20,20 +20,20 @@
 ## CURRENT STATUS (2026-01-21)
 
 ### What’s implemented
-- **Pixi template + lock** in-image at `dockers/infer-dev/installation/stage-2/custom/vllm-pixi-template/` (includes `[system-requirements] cuda = "12"` so Pixi can solve CUDA builds).
+- **Pixi template + lock** in-image at `dockers/infer-dev/src/installation/stage-2/custom/vllm-pixi-template/` (includes `[system-requirements] cuda = "12"` so Pixi can solve CUDA builds).
 - **Host-side offline bundle builder** at `dockers/infer-dev/host-scripts/build-vllm-bundle.sh`:
   - uses Pixi lock + `pixi run verify`
   - uses `pixi-pack` with retries
   - supports `-c/--rattler-config` for mirrors (added `dockers/infer-dev/host-scripts/rattler-config.tuna.toml`)
-- **Container boot offline installer** at `dockers/infer-dev/installation/stage-2/custom/install-vllm-offline.sh`:
+- **Container boot offline installer** at `dockers/infer-dev/src/installation/stage-2/custom/install-vllm-offline.sh`:
   - fixes PATH so `pixi` is found when running as user `me`
   - extracts bundle tar into a stable project dir (default `/hard/volume/workspace/vllm-pixi-offline`)
   - patches `channels = ["./channel"]`
   - re-locks (`pixi lock`) after patching channels so the lock references local `channel/...` paths
   - installs with `pixi install --frozen` and verifies with `pixi run verify`
 - **TOML runner + entrypoint wiring**:
-  - `dockers/infer-dev/installation/stage-2/custom/check-and-run-vllm.sh`
-  - `dockers/infer-dev/installation/stage-2/custom/infer-dev-entry.sh` (adds `/soft/app/vllm/*` helpers + env-gated boot hooks)
+  - `dockers/infer-dev/src/installation/stage-2/custom/check-and-run-vllm.sh`
+  - `dockers/infer-dev/src/installation/stage-2/custom/infer-dev-entry.sh` (adds `/soft/app/vllm/*` helpers + env-gated boot hooks)
 - **Ports/mounts/docs/config example**:
   - vLLM host port exposed: host `11981` → container `8000`
   - Qwen2-VL test model mount added: `/llm-models/Qwen2-VL-7B-Instruct`
@@ -101,7 +101,7 @@
 
 ### 2.1 High-level flow
 0. **Build & pack offline bundle (host-side / CI, online)**:
-   - In a Pixi project directory (template lives in-image at `dockers/infer-dev/installation/stage-2/custom/vllm-pixi-template/`):
+   - In a Pixi project directory (template lives in-image at `dockers/infer-dev/src/installation/stage-2/custom/vllm-pixi-template/`):
      - `pixi lock` to produce/refresh `pixi.lock`.
       - `pixi run` a small validation task (import `torch`, `vllm`, print versions; optional short server warmup).
      - Run `pixi-pack` to produce an offline bundle tar (recommended: use a shared cache via `--use-cache`):
@@ -225,11 +225,11 @@ During development (online build/pack), we should use the host’s HTTP proxy to
 ## 3. Files to Modify or Add
 
 - **`dockers/infer-dev/host-scripts/build-vllm-bundle.sh`**: Build vLLM offline bundle (Pixi lock + verify + `pixi-pack`) and output `offline-bundle.tar` (contains `channel/`).
-- **`dockers/infer-dev/installation/stage-2/custom/install-vllm-offline.sh`**: Extract an offline bundle tar into a stable Pixi project dir, patch channels to local only, run `pixi install --frozen`, verify imports, write `.installed-from.json`.
-- **`dockers/infer-dev/installation/stage-2/custom/check-and-run-vllm.sh`**: Parse TOML and launch one/many vLLM servers via `pixi run --manifest-path ...` (per-instance GPU/log handling).
-- **`dockers/infer-dev/installation/stage-2/custom/infer-dev-entry.sh`**: Call vLLM installer and runner based on env vars; add `/soft/app/vllm/*` symlinks.
-- **`dockers/infer-dev/installation/stage-2/custom/vllm-pixi-template/pixi.toml`**: Default Pixi project template (channels, system requirements, CUDA/PyTorch, vLLM deps, verify tasks).
-- **`dockers/infer-dev/installation/stage-2/custom/vllm-pixi-template/pixi.lock`**: Lockfile used by `pixi-pack` to generate the runtime pack.
+- **`dockers/infer-dev/src/installation/stage-2/custom/install-vllm-offline.sh`**: Extract an offline bundle tar into a stable Pixi project dir, patch channels to local only, run `pixi install --frozen`, verify imports, write `.installed-from.json`.
+- **`dockers/infer-dev/src/installation/stage-2/custom/check-and-run-vllm.sh`**: Parse TOML and launch one/many vLLM servers via `pixi run --manifest-path ...` (per-instance GPU/log handling).
+- **`dockers/infer-dev/src/installation/stage-2/custom/infer-dev-entry.sh`**: Call vLLM installer and runner based on env vars; add `/soft/app/vllm/*` symlinks.
+- **`dockers/infer-dev/src/installation/stage-2/custom/vllm-pixi-template/pixi.toml`**: Default Pixi project template (channels, system requirements, CUDA/PyTorch, vLLM deps, verify tasks).
+- **`dockers/infer-dev/src/installation/stage-2/custom/vllm-pixi-template/pixi.lock`**: Lockfile used by `pixi-pack` to generate the runtime pack.
 - **`dockers/infer-dev/model-configs/vllm-*.toml`**: Example vLLM instance configs (at least one).
 - **`dockers/infer-dev/README.md`**: Document env vars, Pixi Pack runtime contract, ports, and example commands.
 - **`dockers/infer-dev/src/merged.env`**: Add `RUN_PORTS` entry for vLLM (and optional `HOST_PORT_VLLM` / `CONTAINER_PORT_VLLM` knobs if this repo’s infer-dev contract adopts them).

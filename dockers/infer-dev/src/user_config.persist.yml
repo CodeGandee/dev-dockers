@@ -1,4 +1,6 @@
-# all paths are relative to /installation directory
+# Paths in this config are relative to the PeiDocker "installation" directory.
+# In this repo layout, the installation dir is tracked at `dockers/infer-dev/src/installation/`
+# and `./pei-configure.sh` temporarily maps it to `./installation` during configure.
 
 stage_1:
   # input/output image settings

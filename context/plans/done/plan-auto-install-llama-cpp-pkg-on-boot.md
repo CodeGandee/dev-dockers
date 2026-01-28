@@ -7,8 +7,8 @@
 - **Date**: 2026-01-15
 - **Completed**: 2026-01-20
 - **Dependencies**:
-  - `dockers/infer-dev/installation/stage-2/custom/infer-dev-entry.sh`
-  - `dockers/infer-dev/installation/stage-2/custom/check-and-run-llama-cpp.sh`
+  - `dockers/infer-dev/src/installation/stage-2/custom/infer-dev-entry.sh`
+  - `dockers/infer-dev/src/installation/stage-2/custom/check-and-run-llama-cpp.sh`
   - `context/design/contract/def-llama-cpp-config-toml.md`
   - `context/design/contract/llama-cpp-config-toml.schema.json`
   - `dockers/infer-dev/README.md`
@@ -75,8 +75,8 @@ sequenceDiagram
 
 ## 3. Files to Modify or Add
 
-- **dockers/infer-dev/installation/stage-2/custom/infer-dev-entry.sh**: Invoke package installer early on boot; keep auto-start gating unchanged.
-- **dockers/infer-dev/installation/stage-2/custom/install-llama-cpp-pkg.sh** (new): Copy + extract archive into `/soft/app/llama-cpp` with logs and idempotency.
+- **dockers/infer-dev/src/installation/stage-2/custom/infer-dev-entry.sh**: Invoke package installer early on boot; keep auto-start gating unchanged.
+- **dockers/infer-dev/src/installation/stage-2/custom/install-llama-cpp-pkg.sh** (new): Copy + extract archive into `/soft/app/llama-cpp` with logs and idempotency.
 - **dockers/infer-dev/README.md**: Document `AUTO_INFER_LLAMA_CPP_PKG_PATH` and the expected package layout.
 - **README.md**: Add a short “use a prebuilt llama.cpp package” note under the inference section.
 - (Optional) **context/design/contract/def-llama-cpp-config-toml.md**: Mention the recommended `llama_cpp_path` when using `/soft/app/llama-cpp/bin/llama-server`.

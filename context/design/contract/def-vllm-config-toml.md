@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Defines the structure and behavior of the `.toml` configuration file used by `dockers/infer-dev/installation/stage-2/custom/check-and-run-vllm.sh` to launch one or more vLLM OpenAI-compatible API servers.
+Defines the structure and behavior of the `.toml` configuration file used by `dockers/infer-dev/src/installation/stage-2/custom/check-and-run-vllm.sh` to launch one or more vLLM OpenAI-compatible API servers.
 
 ## File Location
 

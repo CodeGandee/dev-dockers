@@ -6,7 +6,45 @@ OUT_DIR="${PROJECT_DIR}/src"
 
 mkdir -p "${OUT_DIR}"
 
-pei-docker-cli configure -p "${PROJECT_DIR}" "$@"
+CONFIG_PATH_DEFAULT="src/user_config.yml"
+if [[ ! -f "${PROJECT_DIR}/${CONFIG_PATH_DEFAULT}" ]]; then
+  echo "Error: missing ${CONFIG_PATH_DEFAULT}. Expected at ${PROJECT_DIR}/${CONFIG_PATH_DEFAULT}" >&2
+  exit 1
+fi
+
+# pei-docker-cli writes stage generated artifacts under installation/stage-*/...
+# Keep the repo root clean by creating a temporary symlink for the duration of this script.
+TEMP_ROOT_INSTALLATION_LINK=0
+cleanup() {
+  if [[ "${TEMP_ROOT_INSTALLATION_LINK}" == "1" ]]; then
+    rm -f "${PROJECT_DIR}/installation" || true
+  fi
+}
+trap cleanup EXIT
+
+if [[ -e "${PROJECT_DIR}/installation" && ! -L "${PROJECT_DIR}/installation" ]]; then
+  echo "Error: ${PROJECT_DIR}/installation exists and is not a symlink. Refusing to overwrite." >&2
+  echo "Move it to ${PROJECT_DIR}/src/installation (or remove it) and re-run." >&2
+  exit 1
+fi
+if [[ ! -e "${PROJECT_DIR}/installation" ]]; then
+  ln -s "src/installation" "${PROJECT_DIR}/installation"
+  TEMP_ROOT_INSTALLATION_LINK=1
+fi
+
+EXTRA_ARGS=()
+HAS_CONFIG_FLAG=0
+for arg in "$@"; do
+  if [[ "$arg" == "-c" || "$arg" == "--config" ]]; then
+    HAS_CONFIG_FLAG=1
+    break
+  fi
+done
+if [[ "${HAS_CONFIG_FLAG}" == "0" ]]; then
+  EXTRA_ARGS+=( -c "${CONFIG_PATH_DEFAULT}" )
+fi
+
+pei-docker-cli configure -p "${PROJECT_DIR}" "${EXTRA_ARGS[@]}" "$@"
 
 move_if_exists() {
   local name="$1"
@@ -40,9 +78,13 @@ if not lines or not lines[0].startswith("name:"):
 
 # When docker-compose.yml lives under src/, relative paths must refer to the parent directory.
 text = text.replace("context: .", "context: ..")
-text = text.replace("dockerfile: ../stage-1.Dockerfile", "dockerfile: stage-1.Dockerfile")
-text = text.replace("dockerfile: ../stage-2.Dockerfile", "dockerfile: stage-2.Dockerfile")
+text = text.replace("dockerfile: ../stage-1.Dockerfile", "dockerfile: src/stage-1.Dockerfile")
+text = text.replace("dockerfile: stage-1.Dockerfile", "dockerfile: src/stage-1.Dockerfile")
+text = text.replace("dockerfile: ../stage-2.Dockerfile", "dockerfile: src/stage-2.Dockerfile")
+text = text.replace("dockerfile: stage-2.Dockerfile", "dockerfile: src/stage-2.Dockerfile")
 text = text.replace("- .container/", "- ../.container/")
+text = text.replace("PEI_STAGE_HOST_DIR_1: ./installation/stage-1", "PEI_STAGE_HOST_DIR_1: ./src/installation/stage-1")
+text = text.replace("PEI_STAGE_HOST_DIR_2: ./installation/stage-2", "PEI_STAGE_HOST_DIR_2: ./src/installation/stage-2")
 
 path.write_text(text)
 PY
@@ -74,6 +116,24 @@ PY
   chmod +x "${script_path}" || true
 }
 
+patch_merged_env_paths() {
+  local env_path="${OUT_DIR}/merged.env"
+  [[ -f "${env_path}" ]] || return 0
+
+  python3 - "${env_path}" <<'PY'
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+text = path.read_text()
+
+text = text.replace("PEI_STAGE_HOST_DIR_1='./installation/stage-1'", "PEI_STAGE_HOST_DIR_1='./src/installation/stage-1'")
+text = text.replace("PEI_STAGE_HOST_DIR_2='./installation/stage-2'", "PEI_STAGE_HOST_DIR_2='./src/installation/stage-2'")
+
+path.write_text(text)
+PY
+}
+
 patch_usage_guide() {
   local guide_path="${OUT_DIR}/PEI-DOCKER-USAGE-GUIDE.md"
   [[ -f "${guide_path}" ]] || return 0
@@ -89,6 +149,11 @@ text = text.replace("`docker-compose.yml`", "`src/docker-compose.yml`")
 text = text.replace("pei-docker-cli configure", "./pei-configure.sh")
 text = text.replace("`build-merged.sh`", "`src/build-merged.sh`")
 text = text.replace("./build-merged.sh", "./src/build-merged.sh")
+text = text.replace("./run-merged.sh", "./src/run-merged.sh")
+text = text.replace("`user_config.yml`", "`src/user_config.yml`")
+text = text.replace("Edit `user_config.yml`", "Edit `src/user_config.yml`")
+text = text.replace("Edit `user_config.yml`.", "Edit `src/user_config.yml`.")
+text = text.replace("installation/", "src/installation/")
 
 text = text.replace("docker compose build stage-2", "docker compose -f src/docker-compose.yml build stage-2")
 text = text.replace("docker compose build stage-1", "docker compose -f src/docker-compose.yml build stage-1")
@@ -101,6 +166,7 @@ PY
 
 patch_compose_paths
 patch_build_merged_context
+patch_merged_env_paths
 patch_usage_guide
 
 echo "OK: moved generated artifacts into ${OUT_DIR}"
