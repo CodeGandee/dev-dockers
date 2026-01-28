@@ -1,0 +1,102 @@
+# Paths in this config are relative to the PeiDocker "installation" directory.
+# In this repo layout, the installation dir is tracked at `dockers/model-bench-cu128/src/installation/`
+# and `./pei-configure.sh` temporarily maps it to `./installation` during configure.
+
+stage_1:
+  image:
+    base: docker.1ms.run/nvidia/cuda:12.8.1-cudnn-devel-ubuntu24.04
+    output: ig-model-bench:cu128-stage-1
+
+  ssh:
+    enable: true
+    port: 22
+    host_port: ${HOST_PORT_SSH:-2222}
+    users:
+      peid:
+        password: '123456'
+        uid: 3100
+        gid: 1100
+        pubkey_file: '~'
+
+  proxy:
+    address: host.docker.internal
+    port: ${HOST_PORT_PROXY:-7890}
+    enable_globally: true
+    remove_after_build: true
+    use_https: false
+
+  apt:
+    repo_source: 'tuna'
+    keep_repo_after_build: true
+    use_proxy: false
+    keep_proxy_after_build: false
+
+  environment:
+    - 'CUDA_HOME=/usr/local/cuda'
+
+  ports: []
+
+  device:
+    type: gpu
+
+  mount: {}
+
+  custom:
+    on_build:
+      - 'stage-1/custom/install-apt-packages.sh'
+      - 'stage-1/custom/install-uv.sh'
+    on_first_run: []
+    on_every_run: []
+    on_user_login: []
+    on_entry: []
+
+stage_2:
+  image:
+    base: null
+    output: ig-model-bench:cu128
+
+  environment:
+    - 'CUDA_HOME=/usr/local/cuda'
+
+  ports: []
+
+  device:
+    type: gpu
+
+  proxy:
+    address: null
+    port: null
+    enable_globally: null
+    remove_after_build: null
+    use_https: null
+
+  storage:
+    app:
+      type: image
+      host_path: .container/app
+      volume_name: null
+    data:
+      type: image
+      host_path: .container/data
+      volume_name: null
+    workspace:
+      type: host
+      host_path: .container/workspace
+      volume_name: null
+
+  mount:
+    home_peid:
+      type: auto-volume
+      dst_path: /home/peid
+      host_path: null
+      volume_name: null
+
+  custom:
+    on_build:
+      - 'stage-2/custom/install-devtools.sh'
+      - 'stage-2/custom/install-clash-rs.sh'
+    on_first_run: []
+    on_every_run: []
+    on_user_login: []
+    on_entry: []
+
