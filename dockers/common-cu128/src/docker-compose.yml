@@ -1,0 +1,100 @@
+services:
+  stage-2:
+    image: ig-common:cu128
+    stdin_open: true
+    tty: true
+    command: /bin/bash
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: all
+            capabilities:
+            - gpu
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    build:
+      context: .
+      dockerfile: stage-2.Dockerfile
+      extra_hosts:
+      - host.docker.internal:host-gateway
+      args:
+        BASE_IMAGE: ig-common:cu128-stage-1
+        WITH_ESSENTIAL_APPS: true
+        PEI_STAGE_HOST_DIR_2: ./installation/stage-2
+        PEI_STAGE_DIR_2: /pei-from-host/stage-2
+        PEI_PREFIX_APPS: app
+        PEI_PREFIX_DATA: data
+        PEI_PREFIX_WORKSPACE: workspace
+        PEI_PREFIX_VOLUME: volume
+        PEI_PREFIX_IMAGE: image
+        PEI_PATH_HARD: /hard
+        PEI_PATH_SOFT: /soft
+        PEI_HTTP_PROXY_2: http://host.docker.internal:7890
+        PEI_HTTPS_PROXY_2: http://host.docker.internal:7890
+        ENABLE_GLOBAL_PROXY: false
+        REMOVE_GLOBAL_PROXY_AFTER_BUILD: true
+    ports:
+    - '2222:22'
+    environment:
+      CUDA_HOME: /usr/local/cuda
+    volumes:
+    - app:/hard/volume/app
+    - data:/hard/volume/data
+    - workspace:/hard/volume/workspace
+    - home_peid:/home/peid
+  stage-1:
+    profiles:
+    - build-helper
+    image: ig-common:cu128-stage-1
+    stdin_open: true
+    tty: true
+    command: /bin/bash
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: all
+            capabilities:
+            - gpu
+    environment:
+      CUDA_HOME: /usr/local/cuda
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    build:
+      context: .
+      dockerfile: stage-1.Dockerfile
+      extra_hosts:
+      - host.docker.internal:host-gateway
+      args:
+        BASE_IMAGE: docker.1ms.run/nvidia/cuda:12.8.1-cudnn-devel-ubuntu24.04
+        WITH_ESSENTIAL_APPS: true
+        WITH_SSH: true
+        SSH_USER_NAME: peid
+        SSH_USER_PASSWORD: '123456'
+        SSH_USER_UID: '3100'
+        SSH_USER_GID: '1100'
+        SSH_PUBKEY_FILE: ''
+        SSH_PRIVKEY_FILE: ''
+        SSH_CONTAINER_PORT: 22
+        APT_SOURCE_FILE: tuna
+        KEEP_APT_SOURCE_FILE: true
+        APT_USE_PROXY: false
+        APT_KEEP_PROXY: false
+        PEI_HTTP_PROXY_1: http://host.docker.internal:7890
+        PEI_HTTPS_PROXY_1: http://host.docker.internal:7890
+        ENABLE_GLOBAL_PROXY: false
+        REMOVE_GLOBAL_PROXY_AFTER_BUILD: true
+        PEI_STAGE_HOST_DIR_1: ./installation/stage-1
+        PEI_STAGE_DIR_1: /pei-from-host/stage-1
+        ROOT_PASSWORD: ''
+    ports:
+    - '2222:22'
+    volumes: []
+volumes:
+  app: {}
+  data: {}
+  workspace: {}
+  home_peid: {}

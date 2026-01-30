@@ -102,10 +102,18 @@ if not lines or not lines[0].startswith("name:"):
     text = "name: model-bench-cu128\n\n" + text.lstrip("\n")
 
 # When docker-compose.yml lives under src/, relative paths must refer to the parent directory.
-text = re.sub(r"(?m)^(\\s*context:\\s*)\\.$", r"\\1..", text)
-text = re.sub(r"(?m)^(\\s*dockerfile:\\s*)(\\.\\./)?stage-1\\.Dockerfile\\s*$", r"\\1src/stage-1.Dockerfile", text)
-text = re.sub(r"(?m)^(\\s*dockerfile:\\s*)(\\.\\./)?stage-2\\.Dockerfile\\s*$", r"\\1src/stage-2.Dockerfile", text)
-text = re.sub(r"(?m)^(\\s*-\\s*)(\\./)?\\.container/", r"\\1../.container/", text)
+text = re.sub(r"(?m)^(\s*context:\s*)\.$", r"\1..", text)
+text = re.sub(
+    r"(?m)^(\s*dockerfile:\s*)(\./)?(\.\./)?stage-1\.Dockerfile\s*$",
+    r"\1src/stage-1.Dockerfile",
+    text,
+)
+text = re.sub(
+    r"(?m)^(\s*dockerfile:\s*)(\./)?(\.\./)?stage-2\.Dockerfile\s*$",
+    r"\1src/stage-2.Dockerfile",
+    text,
+)
+text = re.sub(r"(?m)^(\s*-\s*)(\./)?\.container/", r"\1../.container/", text)
 text = text.replace("PEI_STAGE_HOST_DIR_1: ./installation/stage-1", "PEI_STAGE_HOST_DIR_1: ./src/installation/stage-1")
 text = text.replace("PEI_STAGE_HOST_DIR_2: ./installation/stage-2", "PEI_STAGE_HOST_DIR_2: ./src/installation/stage-2")
 
