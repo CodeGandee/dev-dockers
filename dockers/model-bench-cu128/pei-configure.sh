@@ -12,15 +12,36 @@ if [[ ! -f "${PROJECT_DIR}/${CONFIG_PATH_DEFAULT}" ]]; then
   exit 1
 fi
 
+# pei-docker-cli requires compose-template.yml at the project root.
+# Keep it tracked under src/ and create a temporary symlink for the duration of this script.
+TEMP_ROOT_COMPOSE_TEMPLATE_LINK=0
+if [[ ! -f "${OUT_DIR}/compose-template.yml" ]]; then
+  echo "Error: missing src/compose-template.yml. Expected at ${OUT_DIR}/compose-template.yml" >&2
+  exit 1
+fi
+
 # pei-docker-cli writes stage generated artifacts under installation/stage-*/...
 # Keep the repo root clean by creating a temporary symlink for the duration of this script.
 TEMP_ROOT_INSTALLATION_LINK=0
 cleanup() {
+  if [[ "${TEMP_ROOT_COMPOSE_TEMPLATE_LINK}" == "1" ]]; then
+    rm -f "${PROJECT_DIR}/compose-template.yml" || true
+  fi
   if [[ "${TEMP_ROOT_INSTALLATION_LINK}" == "1" ]]; then
     rm -f "${PROJECT_DIR}/installation" || true
   fi
 }
 trap cleanup EXIT
+
+if [[ -e "${PROJECT_DIR}/compose-template.yml" && ! -L "${PROJECT_DIR}/compose-template.yml" ]]; then
+  echo "Error: ${PROJECT_DIR}/compose-template.yml exists and is not a symlink. Refusing to overwrite." >&2
+  echo "Move it to ${OUT_DIR}/compose-template.yml (or remove it) and re-run." >&2
+  exit 1
+fi
+if [[ ! -e "${PROJECT_DIR}/compose-template.yml" ]]; then
+  ln -s "src/compose-template.yml" "${PROJECT_DIR}/compose-template.yml"
+  TEMP_ROOT_COMPOSE_TEMPLATE_LINK=1
+fi
 
 if [[ -e "${PROJECT_DIR}/installation" && ! -L "${PROJECT_DIR}/installation" ]]; then
   echo "Error: ${PROJECT_DIR}/installation exists and is not a symlink. Refusing to overwrite." >&2
@@ -68,6 +89,7 @@ patch_compose_paths() {
   [[ -f "${compose_path}" ]] || return 0
 
   python3 - "${compose_path}" <<'PY'
+import re
 import sys
 from pathlib import Path
 
@@ -80,12 +102,10 @@ if not lines or not lines[0].startswith("name:"):
     text = "name: model-bench-cu128\n\n" + text.lstrip("\n")
 
 # When docker-compose.yml lives under src/, relative paths must refer to the parent directory.
-text = text.replace("context: .", "context: ..")
-text = text.replace("dockerfile: ../stage-1.Dockerfile", "dockerfile: src/stage-1.Dockerfile")
-text = text.replace("dockerfile: stage-1.Dockerfile", "dockerfile: src/stage-1.Dockerfile")
-text = text.replace("dockerfile: ../stage-2.Dockerfile", "dockerfile: src/stage-2.Dockerfile")
-text = text.replace("dockerfile: stage-2.Dockerfile", "dockerfile: src/stage-2.Dockerfile")
-text = text.replace("- .container/", "- ../.container/")
+text = re.sub(r"(?m)^(\\s*context:\\s*)\\.$", r"\\1..", text)
+text = re.sub(r"(?m)^(\\s*dockerfile:\\s*)(\\.\\./)?stage-1\\.Dockerfile\\s*$", r"\\1src/stage-1.Dockerfile", text)
+text = re.sub(r"(?m)^(\\s*dockerfile:\\s*)(\\.\\./)?stage-2\\.Dockerfile\\s*$", r"\\1src/stage-2.Dockerfile", text)
+text = re.sub(r"(?m)^(\\s*-\\s*)(\\./)?\\.container/", r"\\1../.container/", text)
 text = text.replace("PEI_STAGE_HOST_DIR_1: ./installation/stage-1", "PEI_STAGE_HOST_DIR_1: ./src/installation/stage-1")
 text = text.replace("PEI_STAGE_HOST_DIR_2: ./installation/stage-2", "PEI_STAGE_HOST_DIR_2: ./src/installation/stage-2")
 
@@ -104,13 +124,14 @@ from pathlib import Path
 path = Path(sys.argv[1])
 text = path.read_text().splitlines()
 
+if any(line.startswith("PROJECT_ROOT=") for line in text):
+    raise SystemExit(0)
+
 out = []
-has_root = False
 for line in text:
     out.append(line)
-    if line.startswith("PROJECT_DIR=") and not has_root:
+    if line.startswith("PROJECT_DIR="):
         out.append('PROJECT_ROOT=$(cd "$PROJECT_DIR/.." && pwd)')
-        has_root = True
 
 new = "\n".join(out) + "\n"
 new = new.replace('cmd+=( "$PROJECT_DIR" )', 'cmd+=( "$PROJECT_ROOT" )')
@@ -142,6 +163,7 @@ patch_usage_guide() {
   [[ -f "${guide_path}" ]] || return 0
 
   python3 - "${guide_path}" <<'PY'
+import re
 import sys
 from pathlib import Path
 
@@ -156,7 +178,7 @@ text = text.replace("./run-merged.sh", "./src/run-merged.sh")
 text = text.replace("`user_config.yml`", "`src/user_config.yml`")
 text = text.replace("Edit `user_config.yml`", "Edit `src/user_config.yml`")
 text = text.replace("Edit `user_config.yml`.", "Edit `src/user_config.yml`.")
-text = text.replace("installation/", "src/installation/")
+text = re.sub(r"(?<!src/)installation/", "src/installation/", text)
 
 text = text.replace("docker compose build stage-2", "docker compose -f src/docker-compose.yml build stage-2")
 text = text.replace("docker compose build stage-1", "docker compose -f src/docker-compose.yml build stage-1")
