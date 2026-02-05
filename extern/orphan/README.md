@@ -12,6 +12,10 @@ Keep this `README.md` tracked.
 
 Contains private intranet configurations (hosts, keys, credentials).
 
+**URL**: https://github.com/igamenovoer/intranet-info
+
+**Note**: This is a private repository. You must have access and be logged in with `gh auth login` to check it out.
+
 To set it up:
 ```bash
 cd extern/orphan
